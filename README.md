@@ -19,7 +19,7 @@ The system is composed of **microservices** that communicate via HTTP and JSON. 
 
                            ┌─────────────────────┐
                            │     Frontend        │
-                           │ (HTML/CSS/JS SPA)  │
+                           │ (HTML/CSS/JS SPA)   │
                            │                     │
                            │ - Home Feed         │
                            │ - Admin Login       │
@@ -28,19 +28,19 @@ The system is composed of **microservices** that communicate via HTTP and JSON. 
                            └─────────┬───────────┘
                                      │ HTTPS / API Calls
                                      ▼
-        ┌──────────────┐      ┌───────────────┐      ┌───────────────┐
-        │ User Service │◀────▶│ Blog Service  │◀────▶│ Comment Service│
-        │  (Node.js)  │      │  (FastAPI)    │      │     (Go)      │
-        │ - JWT Auth   │      │ - CRUD Blogs  │      │ - CRUD Comments│
-        │ - Profile    │      │ - Image URL   │      │ - Timestamp   │
-        │ - Admins     │      │ - Author ID   │      │ - User ID     │
-        └─────┬────────┘      └─────┬─────────┘      └─────┬─────────┘
-              │                     │                     │
-              ▼                     ▼                     ▼
-       ┌─────────────┐       ┌──────────────┐      ┌─────────────┐
-       │   MongoDB   │       │  SQLite DB   │      │ SQLite DB   │
-       │ (Users/Admins) │     │ (Blogs)      │      │ (Comments) │
-       └─────────────┘       └──────────────┘      └─────────────┘
+        ┌──────────────┐      ┌───────────────┐      ┌──────────────────┐
+        │ User Service │◀────▶│ Blog Service │◀────▶│ Comment Service │
+        │  (Node.js)   │      │  (FastAPI)    │      │    (Go)          │
+        │ - JWT Auth   │      │ - CRUD Blogs  │      │ - CRUD Comments  │
+        │ - Profile    │      │ - Image URL   │      │ - Timestamp      │
+        │ - Admins     │      │ - Author ID   │      │ - User ID        │
+        └─────┬────────┘      └─────┬─────────┘      └─────┬────────────┘
+              │                     │                      │
+              ▼                     ▼                      ▼
+        ┌─────────────┐        ┌──────────────┐      ┌─────────────┐
+        │   MongoDB   │        │  SQLite DB   │      │ SQLite DB   │
+        │(Users/Admins)│       │ (Blogs)      │      │ (Comments)  │
+        └─────────────┘        └──────────────┘      └─────────────┘
                                      │
                                      ▼
                              ┌───────────────┐
@@ -210,17 +210,6 @@ Simply open `frontend/index.html` in your browser. Ensure that backend services 
 * Dynamic and responsive frontend SPA.
 * Comment system with real-time updates.
 * File upload handling and dynamic media rendering.
-
----
-
-## Future Enhancements
-
-* Move to PostgreSQL or MySQL for production.
-* Implement JWT authentication on frontend for all API requests.
-* Add pagination for blog feed.
-* Add categories and tags filtering with backend support.
-* Implement user roles beyond admin (readers, moderators, etc.).
-* Deploy on cloud platforms for full POC deployment.
 
 ---
 
