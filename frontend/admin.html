@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BluInsights Admin | Tech Blog Management</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{background:#f4f6f9;color:#222;line-height:1.6;}
+a{text-decoration:none;color:#1E90FF;}
+a:hover{color:#0b65c2;}
+.container{width:90%;max-width:1200px;margin:auto;}
+header{background:#0b2a59;color:#fff;padding:15px 0;position:sticky;top:0;z-index:1000;}
+.header-container{display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:1.8rem;font-weight:700;}
+nav ul{list-style:none;display:flex;gap:20px;}
+nav ul li a{color:#fff;font-weight:500;cursor:pointer;}
+#heroSection{height:400px;position:relative;overflow:hidden;margin-bottom:40px;border-radius:8px;}
+.hero-slide{position:absolute;width:100%;height:100%;background-size:cover;background-position:center;transition: transform 1s ease;border-radius:8px;}
+.hero-overlay{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;text-align:center;opacity:0;transition: opacity 1s ease;border-radius:8px;}
+.hero-overlay.active{opacity:1;}
+.hero-overlay h1{font-size:2.5rem;margin-bottom:10px;}
+.hero-overlay p{font-size:1rem;max-width:80%;}
+.main-content{display:flex;gap:30px;margin-bottom:40px;}
+.blog-feed{flex:3;display:flex;flex-direction:column;gap:30px;transition:opacity 0.4s ease;}
+.blog-card{background:#fff;padding:20px;border-radius:8px;box-shadow:0 3px 6px rgba(0,0,0,0.1);display:flex;flex-direction:column;cursor:pointer;}
+.blog-card img{width:100%;height:auto;border-radius:5px;margin-bottom:15px;}
+.blog-card h2{font-size:1.5rem;margin-bottom:8px;}
+.blog-card .meta{font-size:0.9rem;color:#555;margin-bottom:12px;}
+.blog-card .excerpt{font-size:1rem;margin-bottom:12px;}
+.read-more{font-weight:600;}
+.sidebar{flex:1;display:flex;flex-direction:column;gap:20px;transition:opacity 0.4s ease;}
+.sidebar h3{margin-bottom:10px;color:#0b2a59;}
+.sidebar ul{list-style:none;padding-left:0;}
+.sidebar ul li a{color:#1E90FF;}
+.tag-list{display:flex;flex-wrap:wrap;gap:10px;}
+.tag-list a{background:#1E90FF;color:#fff;padding:5px 10px;border-radius:20px;font-size:0.85rem;}
+#createPostSection, #loginSection, #registerSection{display:none;background:#fff;padding:30px;border-radius:10px;box-shadow:0 6px 15px rgba(0,0,0,0.1);max-width:700px;margin:auto;margin-top:20px;}
+#createPostSection h2, #loginSection h2, #registerSection h2{text-align:center;color:#0b2a59;margin-bottom:20px;}
+#createPostSection label, #loginSection label, #registerSection label{display:block;margin-top:15px;font-weight:500;}
+#createPostSection input, #loginSection input, #registerSection input, #createPostSection textarea{width:100%;padding:12px;margin-top:8px;border-radius:5px;border:1px solid #ccc;font-size:1rem;}
+#createPostSection button, #loginSection button, #registerSection button{background:#1E3A8A;color:#fff;border:none;padding:12px 25px;margin-top:20px;border-radius:5px;cursor:pointer;font-weight:600;width:100%;font-size:1rem;transition:0.3s;}
+#createPostSection button:hover, #loginSection button:hover, #registerSection button:hover{background:#0b65c2;}
+#imagePreview{width:100%;max-height:300px;margin-top:15px;border-radius:8px;object-fit:cover;display:none;}
+#postDetail,#profileView{display:none;opacity:0;transition:opacity 0.4s ease;}
+#postDetail img{width:100%;margin-bottom:15px;border-radius:5px;}
+@media(max-width:900px){.main-content{flex-direction:column;}nav ul{flex-direction:column;gap:10px;}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="container header-container">
+<div class="logo">BluInsights Admin</div>
+<nav>
+<ul>
+<li><a id="homeLink">Home</a></li>
+<li id="createPostBtn"><a>Create Post</a></li>
+<li><a id="profileLink">Profile</a></li>
+<li id="loginBtn"><a>Admin Login</a></li>
+<li id="registerBtn"><a>Register Admin</a></li>
+</ul>
+</nav>
+</div>
+</header>
+
+<section id="heroSection">
+<div class="hero-slide" style="background-image:url('images/Image_1.png');"></div>
+<div class="hero-slide" style="background-image:url('images/Image_2.png');"></div>
+<div class="hero-slide" style="background-image:url('images/Image_3.png');"></div>
+<div class="hero-overlay active"><h1>Welcome Admin</h1><p>Manage all posts and comments securely.</p></div>
+</section>
+
+<main class="container main-content">
+<section class="blog-feed" id="blogFeed"></section>
+<aside class="sidebar">
+<div class="search-box"><input type="text" id="searchBox" placeholder="Search posts..." style="width:100%;padding:8px;border-radius:5px;border:1px solid #ccc;"></div>
+<div class="categories"><h3>Categories</h3>
+<ul>
+<li><a>Cloud</a></li><li><a>DevOps</a></li><li><a>Cybersecurity</a></li><li><a>AI & ML</a></li><li><a>Productivity</a></li>
+</ul></div>
+<div class="tags"><h3>Popular Tags</h3>
+<div class="tag-list">
+<a>#Kubernetes</a><a>#Terraform</a><a>#Python</a><a>#CloudSecurity</a><a>#Microservices</a>
+</div></div>
+</aside>
+</main>
+
+<!-- Login/Register -->
+<form id="loginSection">
+<h2>Admin Login</h2>
+<label>Username</label>
+<input type="text" id="username" placeholder="Enter username" required>
+<label>Password</label>
+<input type="password" id="password" placeholder="Enter password" required>
+<button type="button" id="loginSubmit">Login</button>
+</form>
+
+<form id="registerSection">
+<h2>Register Admin</h2>
+<label>Username</label>
+<input type="text" id="regUsername" placeholder="Enter username" required>
+<label>Password</label>
+<input type="password" id="regPassword" placeholder="Enter password" required>
+<button type="button" id="registerSubmit">Register</button>
+</form>
+
+<!-- Create Post -->
+<form id="createPostSection">
+<h2>Create a New Blog Post</h2>
+<label>Post Title</label>
+<input type="text" id="title" placeholder="Enter the post title" required>
+<label>Tags (comma-separated)</label>
+<input type="text" id="tags" placeholder="e.g. DevOps, Cloud, Security">
+<label>Content</label>
+<textarea id="content" rows="8" placeholder="Write your blog content here..." required></textarea>
+<label>Header Image</label>
+<input type="file" id="image">
+<img id="imagePreview" src="" alt="Image Preview">
+<button type="submit">Publish Post</button>
+</form>
+
+<!-- Post Details -->
+<section id="postDetail">
+<button id="backBtn">← Back to Home</button>
+<div id="postActions"></div>
+<img id="postImage" src="" alt="Header Image">
+<h2 id="postTitle"></h2>
+<p class="meta" id="postMeta"></p>
+<p id="postContent"></p>
+<h3>Comments</h3>
+<ul id="commentList"></ul>
+<form id="commentForm"><input type="text" id="commentInput" placeholder="Add a comment..." required><button type="submit">Post Comment</button></form>
+</section>
+
+<section id="profileView">
+<button id="backHomeProfile">← Back to Home</button>
+<h2>Admin Profile</h2>
+<p id="profileName">Name: Admin</p>
+<h3>My Posts</h3>
+<ul id="profilePosts"></ul>
+</section>
+
+<footer>
+<p>© 2025 BluDive Technologies Ltd. All rights reserved.</p>
+<div class="social-links"><a>LinkedIn</a> | <a>Twitter</a> | <a>GitHub</a></div>
+</footer>
+
+<script>
+// --- State ---
+let loggedIn = false;
+let editingPostId = null;
+
+const createBtn = document.getElementById('createPostBtn');
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const createSection = document.getElementById('createPostSection');
+const loginSection = document.getElementById('loginSection');
+const registerSection = document.getElementById('registerSection');
+const heroSection = document.getElementById('heroSection');
+const profileName = document.getElementById('profileName');
+const profilePosts = document.getElementById('profilePosts');
+const blogFeed = document.getElementById('blogFeed');
+
+// --- Update UI ---
+function updateUI() {
+  createBtn.style.display = loggedIn ? 'inline' : 'none';
+  loginBtn.style.display = loggedIn ? 'none' : 'inline';
+  registerBtn.style.display = loggedIn ? 'none' : 'inline';
+  loginSection.style.display = 'none';
+  registerSection.style.display = 'none';
+  createSection.style.display = loggedIn ? 'block' : 'none';
+}
+updateUI();
+
+// --- Navigation ---
+document.getElementById('homeLink').addEventListener('click', () => {
+  heroSection.style.display = 'block';
+  blogFeed.style.display = 'flex';
+  blogFeed.style.opacity = 1;
+  document.getElementById('postDetail').style.display = 'none';
+  document.getElementById('profileView').style.display = 'none';
+});
+
+loginBtn.addEventListener('click', () => {
+  loginSection.style.display = 'block';
+  registerSection.style.display = 'none';
+});
+
+registerBtn.addEventListener('click', () => {
+  registerSection.style.display = 'block';
+  loginSection.style.display = 'none';
+});
+
+// --- Load Posts ---
+async function loadPosts() {
+  blogFeed.innerHTML = '';
+  try {
+    console.log("Fetching posts...");
+    const res = await fetch('http://localhost:5001/blogs');
+    const posts = await res.json();
+    posts.sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
+    posts.forEach(post => renderBlogPost(post));
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+    alert('Error fetching posts');
+  }
+}
+loadPosts();
+
+// --- Render Post ---
+function renderBlogPost(post) {
+  const card = document.createElement('div');
+  card.className = 'blog-card';
+  card.innerHTML = `
+    <img src="${post.image_url || 'https://via.placeholder.com/800x400'}" alt="${post.title}">
+    <h2>${post.title}</h2>
+    <p class="meta">By ${post.author} | ${new Date(post.created_at).toLocaleDateString()}</p>
+    <p class="excerpt">${post.content.substring(0,150)}...</p>
+    <a href="#" class="read-more">Read More →</a>`;
+  card.addEventListener('click', () => showPostDetail(post.id));
+  blogFeed.prepend(card);
+}
+
+// --- Show Post Details ---
+async function showPostDetail(postId) {
+  window.currentPostId = postId;
+  heroSection.style.display = 'none';
+  blogFeed.style.opacity = 0;
+  document.querySelector('.sidebar').style.opacity = 0;
+
+  try {
+    const res = await fetch(`http://localhost:5001/blogs/${postId}`);
+    const post = await res.json();
+    document.getElementById('postTitle').innerText = post.title;
+    document.getElementById('postMeta').innerText = `By ${post.author} | ${new Date(post.created_at).toLocaleDateString()}`;
+    document.getElementById('postContent').innerText = post.content;
+    document.getElementById('postImage').src = post.image_url || 'https://via.placeholder.com/800x400';
+
+    let actionButtons = document.getElementById('postActions');
+    actionButtons.innerHTML = '';
+    if (loggedIn && post.author === localStorage.getItem('username')) {
+      actionButtons.innerHTML = `<button id="editPostBtn">Edit Post</button><button id="deletePostBtn">Delete Post</button>`;
+
+      document.getElementById('deletePostBtn').addEventListener('click', async () => {
+        if (confirm('Are you sure?')) {
+          try {
+            const delRes = await fetch(`http://localhost:5001/blogs/${postId}`, {
+              method: 'DELETE'
+            });
+            const data = await delRes.json();
+            alert(data.detail || 'Deleted');
+            document.getElementById('backBtn').click();
+            loadPosts();
+          } catch (err) {
+            console.error(err);
+            alert('Error deleting post');
+          }
+        }
+      });
+
+      document.getElementById('editPostBtn').addEventListener('click', () => {
+        createSection.style.display = 'block';
+        createSection.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('title').value = post.title;
+        document.getElementById('tags').value = post.tags;
+        document.getElementById('content').value = post.content;
+        editingPostId = postId;
+      });
+    }
+
+    // Load comments
+    try {
+      const commentsRes = await fetch(`http://localhost:5002/comments/${postId}`);
+      const comments = await commentsRes.json();
+      const commentList = document.getElementById('commentList');
+      commentList.innerHTML = '';
+      comments.forEach(c => {
+        const li = document.createElement('li');
+        li.innerText = `${c.user_id}: ${c.text}`;
+        commentList.appendChild(li);
+      });
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+    }
+
+  } catch (err) {
+    console.error("Error fetching post details:", err);
+  }
+
+  setTimeout(() => {
+    blogFeed.style.display = 'none';
+    document.querySelector('.sidebar').style.display = 'none';
+    document.getElementById('postDetail').style.display = 'block';
+    document.getElementById('postDetail').style.opacity = 1;
+  }, 300);
+}
+
+// --- Create / Update Post ---
+document.getElementById('createPostSection').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  console.log("Submit handler triggered");
+
+  if (!loggedIn) { alert('Please login first.'); return; }
+
+  console.log("Submitting post...");
+
+  const title = document.getElementById('title').value;
+  const tags = document.getElementById('tags').value;
+  const content = document.getElementById('content').value;
+  const imageFile = document.getElementById('image').files[0];
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('tags', tags);
+  formData.append('content', content);
+  formData.append('author', localStorage.getItem('username') || 'Admin');
+  if (imageFile) formData.append('image', imageFile);
+
+  try {
+    let res;
+    if (editingPostId) {
+      res = await fetch(`http://localhost:5001/blogs/${editingPostId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+        },
+        body: formData
+      });
+      editingPostId = null;
+    } else {
+      res = await fetch('http://localhost:5001/blogs', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+        },
+        body: formData
+      });
+    }
+
+    const data = await res.json();
+    if (res.ok) {
+      alert(editingPostId ? 'Post Updated!' : 'Post Published!');
+      console.log("Post saved:", data);
+      renderBlogPost(data);
+      this.reset();
+      document.getElementById('imagePreview').style.display = 'none';
+    } else {
+      alert(data.detail || 'Failed to publish post');
+      console.error("Publish error:", data);
+    }
+  } catch (err) {
+    console.error("Error connecting to Blog Service:", err);
+    alert('Error connecting to Blog Service');
+  }
+});
+
+// --- Admin Login ---
+document.getElementById('loginSubmit').addEventListener('click', async () => {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  if (!username || !password) { alert('Please enter username and password'); return; }
+
+  try {
+    const res = await fetch('http://localhost:5050/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      loggedIn = true;
+      localStorage.setItem('username', username);
+      localStorage.setItem('token', data.token);
+      updateUI();
+      alert('Logged in successfully!');
+    } else {
+      alert(data.message || 'Login failed');
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    alert('Error connecting to server');
+  }
+});
+
+// --- Register Admin ---
+document.getElementById('registerSubmit').addEventListener('click', async () => {
+  const username = document.getElementById('regUsername').value;
+  const password = document.getElementById('regPassword').value;
+  if (!username || !password) { alert('Please fill in all fields'); return; }
+
+  try {
+    const res = await fetch('http://localhost:5050/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert('Admin registered! You can now login.');
+      document.getElementById('regUsername').value = '';
+      document.getElementById('regPassword').value = '';
+    } else {
+      alert(data.message || 'Registration failed');
+    }
+  } catch (err) {
+    console.error("Register error:", err);
+    alert('Error connecting to server');
+  }
+});
+
+// --- Search Posts ---
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  document.querySelectorAll('.blog-card').forEach(card => {
+    const title = card.querySelector('h2').innerText.toLowerCase();
+    const excerpt = card.querySelector('.excerpt').innerText.toLowerCase();
+    card.style.display = title.includes(query) || excerpt.includes(query) ? 'flex' : 'none';
+  });
+});
+
+// --- Image Preview ---
+document.getElementById('image')?.addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('imagePreview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  }
+});
+
+// --- Post a Comment ---
+document.getElementById('commentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = document.getElementById('commentInput').value.trim();
+  if (!text) return;
+
+  try {
+    const res = await fetch(`http://localhost:5002/comments/${window.currentPostId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: localStorage.getItem('username') || 'Guest',
+        text: text
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      // Add comment immediately to the list
+      const li = document.createElement('li');
+      li.innerText = `${data.user_id}: ${data.text}`;
+      document.getElementById('commentList').prepend(li);
+
+      document.getElementById('commentInput').value = '';
+    } else {
+      alert(data.error || 'Failed to post comment');
+    }
+  } catch (err) {
+    console.error('Error posting comment:', err);
+    alert('Error posting comment');
+  }
+});
+</script>

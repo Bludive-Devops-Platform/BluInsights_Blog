@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BluInsights | Tech Blog by BluDive Technologies</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{background:#f9f9f9;color:#222;line-height:1.6; position: relative;}
+a{text-decoration:none;color:#1E90FF;}
+a:hover{color:#0b65c2;}
+.container{width:90%;max-width:1200px;margin:auto;}
+header{background:#0b2a59;color:#fff;padding:15px 0;position:sticky;top:0;z-index:1000;}
+.header-container{display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:1.8rem;font-weight:700;}
+nav ul{list-style:none;display:flex;gap:20px;}
+nav ul li a{color:#fff;font-weight:500;}
+#heroSection{height:650px;position:relative;overflow:hidden;margin-bottom:40px;}
+.hero-slide{position:absolute;width:100%;height:100%;background-size:cover;background-position:center;transition: transform 1s ease;}
+.hero-overlay{position:absolute;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;text-align:center;opacity:0;transition: opacity 1s ease;}
+.hero-overlay.active{opacity:1;}
+.hero-overlay h1{font-size:3rem;margin-bottom:10px;}
+.hero-overlay p{font-size:1.2rem;max-width:80%;}
+.main-content{display:flex;gap:30px;margin-bottom:40px;}
+.blog-feed{flex:3;display:flex;flex-direction:column;gap:30px;transition:opacity 0.4s ease;}
+.blog-card{background:#fff;padding:20px;border-radius:8px;box-shadow:0 3px 6px rgba(0,0,0,0.1);display:flex;flex-direction:column;cursor:pointer;}
+.blog-card img{width:100%;height:auto;border-radius:5px;margin-bottom:15px;}
+.blog-card h2{font-size:1.5rem;margin-bottom:8px;}
+.blog-card .meta{font-size:0.9rem;color:#555;margin-bottom:12px;}
+.blog-card .excerpt{font-size:1rem;margin-bottom:12px;}
+.read-more{font-weight:600;}
+.sidebar{flex:1;display:flex;flex-direction:column;gap:20px;transition:opacity 0.4s ease;}
+.sidebar h3{margin-bottom:10px;color:#0b2a59;}
+.sidebar ul{list-style:none;padding-left:0;}
+.sidebar ul li a{color:#1E90FF;}
+.tag-list{display:flex;flex-wrap:wrap;gap:10px;}
+.tag-list a{background:#1E90FF;color:#fff;padding:5px 10px;border-radius:20px;font-size:0.85rem;}
+form{background:#fff;padding:25px;border-radius:8px;box-shadow:0 3px 6px rgba(0,0,0,0.1);margin-top:40px;transition:opacity 0.4s ease;}
+form h2{color:#0b2a59;margin-bottom:15px;}
+form label{display:block;margin-top:10px;font-weight:600;}
+form input[type="text"],form input[type="password"],form textarea,form select{width:100%;padding:10px;margin-top:5px;border-radius:5px;border:1px solid #ccc;}
+form button{background:#1E3A8A;color:#fff;border:none;padding:10px 20px;margin-top:15px;border-radius:5px;cursor:pointer;font-weight:600;}
+form button:hover{background:#0b65c2;}
+#imagePreview{max-width:100%;margin-top:10px;border-radius:5px;max-height:300px;}
+#postDetail,#profileView{display:none;opacity:0;transition:opacity 0.4s ease;}
+#postDetail img{width:100%;margin-bottom:15px;border-radius:5px;}
+#loginSection, #registerSection{position:fixed;bottom:0;width:50%;left:0;background:#fff;padding:20px;box-shadow:0 -3px 6px rgba(0,0,0,0.1);transition:opacity 0.4s ease;}
+#registerSection{left:50%; border-left:1px solid #ccc;}
+#loginSection h2, #registerSection h2{margin-bottom:10px;}
+@media(max-width:900px){
+  .main-content{flex-direction:column;}
+  nav ul{flex-direction:column;gap:10px;}
+  #loginSection,#registerSection{position:static;width:100%;border-left:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="container header-container">
+<div class="logo">BluInsights</div>
+<nav>
+<ul>
+<li><a href="#home" id="homeLink">Home</a></li>
+<li><a href="#">Categories</a></li>
+<li><a href="#" id="profileLink">Profile</a></li>
+</ul>
+</nav>
+</div>
+</header>
+
+<section id="heroSection">
+<div class="hero-slide" style="background-image:url('images/Image_1.png');"></div>
+<div class="hero-slide" style="background-image:url('images/Image_2.png');"></div>
+<div class="hero-slide" style="background-image:url('images/Image_3.png');"></div>
+<div class="hero-overlay active"><h1>Welcome to BluInsights</h1><p>Your gateway to tech trends, deep dives, and insights from BluDive Technologies.</p></div>
+<div class="hero-overlay"><h1>Discover DevOps</h1><p>Insights on pipelines, cloud infrastructure, and more.</p></div>
+<div class="hero-overlay"><h1>Latest in Cloud Security</h1><p>Stay updated with trends and best practices.</p></div>
+</section>
+
+<main class="container main-content">
+<section class="blog-feed" id="blogFeed"></section>
+<aside class="sidebar">
+<div class="search-box"><input type="text" placeholder="Search posts..." id="searchBox" style="width:100%;padding:8px;border-radius:5px;border:1px solid #ccc;"></div>
+<div class="categories"><h3>Categories</h3><ul>
+<li><a href="#">Cloud</a></li><li><a href="#">DevOps</a></li><li><a href="#">Cybersecurity</a></li><li><a href="#">AI & ML</a></li><li><a href="#">Productivity</a></li>
+</ul></div>
+<div class="tags"><h3>Popular Tags</h3><div class="tag-list">
+<a href="#">#Kubernetes</a><a href="#">#Terraform</a><a href="#">#Python</a><a href="#">#CloudSecurity</a><a href="#">#Microservices</a>
+</div></div>
+</aside>
+</main>
+
+<form id="createPostSection" style="display:none;">
+<h2>Create a New Blog Post</h2>
+<label for="title">Title</label>
+<input type="text" id="title" placeholder="Enter post title" required>
+<label for="tags">Tags (comma-separated)</label>
+<input type="text" id="tags" placeholder="DevOps, Cloud, Security">
+<label for="content">Content</label>
+<textarea id="content" rows="6" placeholder="Write your blog post here..." required></textarea>
+<label for="image">Header Image</label>
+<input type="file" id="image">
+<img id="imagePreview" src="" alt="Image Preview" style="display:none;">
+<button type="submit">Publish Post</button>
+</form>
+
+
+<section id="postDetail" class="container">
+<button id="backBtn">← Back to Home</button>
+<div id="postActions"></div>
+<img id="postImage" src="" alt="Header Image">
+<h2 id="postTitle"></h2>
+<p class="meta" id="postMeta"></p>
+<p id="postContent"></p>
+<h3>Comments</h3>
+<ul id="commentList"></ul>
+<form id="commentForm"><input type="text" id="commentInput" placeholder="Add a comment..." required><button type="submit">Post Comment</button></form>
+</section>
+
+<section id="profileView" class="container">
+<button id="backHomeProfile">← Back to Home</button>
+<h2>User Profile</h2>
+<p id="profileName">Name: Demo User</p>
+<p>Bio: Tech enthusiast at BluDive Technologies</p>
+<h3>My Posts</h3>
+<ul id="profilePosts"></ul>
+</section>
+
+<footer>
+<p>© 2025 BluDive Technologies Ltd. All rights reserved.</p>
+<div class="social-links"><a href="#">LinkedIn</a> | <a href="#">Twitter</a> | <a href="#">GitHub</a></div>
+</footer>
+
+<script>
+// Public blog state
+const heroSection = document.getElementById('heroSection');
+const blogFeed = document.getElementById('blogFeed');
+
+// Home link
+document.getElementById('homeLink').addEventListener('click', () => {
+  document.getElementById('postDetail').style.display = 'none';
+  document.getElementById('profileView').style.display = 'none';
+  heroSection.style.display = 'block';
+  blogFeed.style.display = 'flex';
+  blogFeed.style.opacity = 1;
+});
+
+// Search functionality
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  document.querySelectorAll('.blog-card').forEach(card => {
+    const title = card.querySelector('h2').innerText.toLowerCase();
+    const excerpt = card.querySelector('.excerpt').innerText.toLowerCase();
+    card.style.display = title.includes(query) || excerpt.includes(query) ? 'flex' : 'none';
+  });
+});
+
+// Hero carousel
+const slides = document.querySelectorAll('.hero-slide');
+const overlays = document.querySelectorAll('.hero-overlay');
+let current = 0;
+setInterval(() => {
+  slides.forEach((s, i) => { s.style.transform = `translateX(${100*(i-current)}%)`; });
+  overlays.forEach((o, i) => o.classList.remove('active'));
+  overlays[current].classList.add('active');
+  current = (current + 1) % slides.length;
+}, 4000);
+
+// Load blog posts
+async function loadPosts() {
+  blogFeed.innerHTML = '';
+  try {
+    const res = await fetch('http://localhost:5001/blogs');
+    const posts = await res.json();
+    // Show latest posts first
+    posts.reverse().forEach(post => renderBlogPost(post));
+  } catch(err) {
+    console.error(err);
+    alert('Error fetching posts');
+  }
+}
+loadPosts();
+
+// Show post detail (read-only, no edit/delete)
+async function showPostDetail(postId){
+
+  window.currentPostId = postId;
+  
+  heroSection.style.display = 'none';
+  blogFeed.style.opacity = 0;
+  document.querySelector('.sidebar').style.opacity = 0;
+
+  try {
+    const res = await fetch(`http://localhost:5001/blogs/${postId}`);
+    const post = await res.json();
+
+    document.getElementById('postTitle').innerText = post.title;
+    document.getElementById('postMeta').innerText = `By ${post.author} | ${new Date(post.created_at).toLocaleDateString()}`;
+    document.getElementById('postContent').innerText = post.content;
+    document.getElementById('postImage').src = post.image_url || 'https://via.placeholder.com/800x400';
+
+    // Fetch comments for this post
+    try {
+      const commentsRes = await fetch(`http://localhost:5002/comments/${postId}`);
+      const comments = await commentsRes.json();
+      const commentList = document.getElementById('commentList');
+      commentList.innerHTML = ''; // Clear previous
+      comments.forEach(c => {
+        const li = document.createElement('li');
+        li.innerText = `${c.user_id}: ${c.text}`;
+        commentList.appendChild(li);
+      });
+    } catch(err){
+      console.error(err);
+      alert('Error fetching comments');
+    }
+
+  } catch(err) {
+    console.error(err);
+    alert('Error fetching post details');
+  }
+
+  setTimeout(() => {
+    blogFeed.style.display = 'none';
+    document.querySelector('.sidebar').style.display = 'none';
+    document.getElementById('postDetail').style.display = 'block';
+    document.getElementById('postDetail').style.opacity = 1;
+  }, 300);
+}
+
+// Back to homepage button
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('postDetail').style.opacity = 0;
+  setTimeout(() => {
+    document.getElementById('postDetail').style.display = 'none';
+    heroSection.style.display = 'block';
+    blogFeed.style.display = 'flex';
+    blogFeed.style.opacity = 1;
+  }, 300);
+});
+
+// Render blog post (public, no edit/delete)
+function renderBlogPost(post){
+  const card = document.createElement('div');
+  card.className = 'blog-card';
+  card.innerHTML = `
+    <img src="${post.image_url || 'https://via.placeholder.com/800x400'}" alt="${post.title}">
+    <h2>${post.title}</h2>
+    <p class="meta">By ${post.author} | ${new Date(post.created_at).toLocaleDateString()}</p>
+    <p class="excerpt">${post.content.substring(0,150)}...</p>
+    <a href="#" class="read-more">Read More →</a>
+  `;
+  card.addEventListener('click', () => showPostDetail(post.id));
+  blogFeed.prepend(card);
+}
+
+// --- Post a Comment ---
+document.getElementById('commentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = document.getElementById('commentInput').value.trim();
+  if (!text) return;
+
+  try {
+    const res = await fetch(`http://localhost:5002/comments/${window.currentPostId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: localStorage.getItem('username') || 'Guest',
+        text: text
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      // Add comment immediately to the list
+      const li = document.createElement('li');
+      li.innerText = `${data.user_id}: ${data.text}`;
+      document.getElementById('commentList').prepend(li);
+
+      document.getElementById('commentInput').value = '';
+    } else {
+      alert(data.error || 'Failed to post comment');
+    }
+  } catch (err) {
+    console.error('Error posting comment:', err);
+    alert('Error posting comment');
+  }
+});
+</script>
