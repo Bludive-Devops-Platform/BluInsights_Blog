@@ -1,123 +1,159 @@
-# BluInsights – Full Tech Blog Platform
+# BluInsights Tech Blog - Project README
 
-![BluInsights Logo](images/logo.png)
+## Project Overview
 
-## Overview
+BluInsights is a comprehensive tech blogging platform built to demonstrate full-stack integration of multiple services. The project showcases best practices in backend and frontend development, API communication, microservices architecture, authentication, and content management. It is designed for BluDive Technologies as a proof-of-concept POC to manage blog posts, comments, and admin functionalities efficiently.
 
-**BluInsights** is a modern, full-stack tech blogging platform developed by BluDive Technologies. It is designed to showcase insights, tutorials, and technical articles in DevOps, Cloud, Cybersecurity, AI/ML, and Productivity. The platform is modular, with separate services for user management, blog posts, comments, and file uploads, ensuring scalability, maintainability, and clean separation of concerns.
+The platform consists of the following components:
 
-BluInsights serves as both a demonstration of modern DevOps workflows and a production-ready internal blogging platform for technical teams.
+* **Frontend**: HTML, CSS, JavaScript SPA that consumes APIs from backend services.
+* **User Service**: Handles authentication and admin management.
+* **Blog Service**: Manages CRUD operations for blog posts.
+* **Comment Service**: Handles user comments on blog posts.
 
----
+The application demonstrates a real-world tech blogging platform with admin control, dynamic content updates, media uploads, and comment management.
 
-## Architecture
+## 🏗 Architecture Overview
 
-```
-┌─────────────┐       ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│ User Service│──────▶│ Blog Service│──────▶│ CommentSvc  │       │ File Service│
-│  (Node.js)  │       │ (Python)    │       │ (Go + Gin)  │       │  (Node.js)  │
-└─────────────┘       └─────────────┘       └─────────────┘       └─────────────┘
-       ▲                     ▲                   ▲
-       │                     │                   │
-       └──────Frontend───────┘                   │
-                (HTML, CSS, JS)                  │
-                                                 ▼
-                                           Image Storage (local/NFS)
-```
+The system is composed of **microservices** that communicate via HTTP and JSON. Below is a high-level architecture diagram:
 
-* **User Service**: Handles authentication, JWT-based sessions, and admin/user profiles.
-* **Blog Service**: Manages blog posts with full CRUD support, including images.
-* **Comment Service**: Manages comments per blog post.
-* **File Service**: Handles header image uploads and provides URL access.
+                           ┌─────────────────────┐
+                           │     Frontend        │
+                           │ (HTML/CSS/JS SPA)  │
+                           │                     │
+                           │ - Home Feed         │
+                           │ - Admin Login       │
+                           │ - Create/Edit Posts │
+                           │ - View Comments     │
+                           └─────────┬───────────┘
+                                     │ HTTPS / API Calls
+                                     ▼
+        ┌──────────────┐      ┌───────────────┐      ┌───────────────┐
+        │ User Service │◀────▶│ Blog Service  │◀────▶│ Comment Service│
+        │  (Node.js)  │      │  (FastAPI)    │      │     (Go)      │
+        │ - JWT Auth   │      │ - CRUD Blogs  │      │ - CRUD Comments│
+        │ - Profile    │      │ - Image URL   │      │ - Timestamp   │
+        │ - Admins     │      │ - Author ID   │      │ - User ID     │
+        └─────┬────────┘      └─────┬─────────┘      └─────┬─────────┘
+              │                     │                     │
+              ▼                     ▼                     ▼
+       ┌─────────────┐       ┌──────────────┐      ┌─────────────┐
+       │   MongoDB   │       │  SQLite DB   │      │ SQLite DB   │
+       │ (Users/Admins) │     │ (Blogs)      │      │ (Comments) │
+       └─────────────┘       └──────────────┘      └─────────────┘
+                                     │
+                                     ▼
+                             ┌───────────────┐
+                             │ Local / NFS   │
+                             │ Storage       │
+                             │ (Images)      │
+                             └───────────────┘
+
 
 ---
 
 ## Features
 
-### Core Features
+### General Features
 
-* Admin-controlled blog creation, editing, and deletion.
-* User authentication via JWT (only admin accounts allowed for post management).
-* Dynamic frontend displaying latest blog posts at the top.
-* Real-time comment system for each blog post.
-* Hero section with sliding banner images.
-* Tag-based filtering and search functionality.
-* Responsive design for desktop and mobile.
+* Admin login and registration for content management.
+* Create, read, update, delete (CRUD) operations for blog posts.
+* Dynamic comments system linked to posts.
+* File uploads for blog post header images.
+* Search and filter functionality for posts.
+* Responsive design compatible with mobile and desktop devices.
+* Hero carousel for showcasing featured topics.
 
-### Tech Stack
+### Admin-Specific Features
 
-* **Frontend**: HTML, CSS, JavaScript
-* **Backend Services**:
+* Access to create, edit, and delete blog posts.
+* Posts are linked to the admin username.
+* Admin-only registration and login.
 
-  * User Service – Node.js + Express + SQLite/MongoDB
-  * Blog Service – Python + FastAPI + SQLite
-  * Comment Service – Go + Gin + SQLite
-  * File Service – Node.js + Express
-* **Authentication**: JWT
-* **Storage**: Local filesystem (images), SQLite (data)
-* **DevOps Tools**: Docker (optional), Git, VSCode, WSL/Ubuntu
+### Blog Features
 
----
+* Blog posts display title, author, content, tags, creation date, and header image.
+* Latest posts appear first in the feed.
+* Individual post pages with comment section.
 
-## Folder Structure
+### Comment Features
 
-```
-backend/
-├── user-service/
-├── blog-service/
-├── comment-service/
-└── file-service/
-
-frontend/
-└── index.html
-```
-
-Each backend service is self-contained and can run independently.
+* Users can post comments on blog posts.
+* Comments include username and timestamp.
+* Comments dynamically update without page reload.
 
 ---
 
-## Service-Specific READMEs
+## Project Structure
 
-### 1. User Service (Node.js + Express)
+```
+BluInsights/
+├── backend/
+│   ├── user-service/        # Node.js + Express service for authentication
+│   ├── blog-service/        # Python FastAPI service for blog CRUD
+│   ├── comment-service/     # Go + Gin service for comments
+├── frontend/                # HTML/CSS/JS SPA
+└── README.md                # This file
+```
 
-**Purpose**: Handles authentication, registration, and admin profile management.
+### Backend Services
 
-#### Endpoints
+1. **User Service**
 
-* `POST /api/login` – Admin login (returns JWT token)
-* `POST /api/register` – Admin registration (optional)
-* `GET /api/profile` – Fetch admin profile info
+   * Node.js + Express
+   * JWT-based authentication
+   * Endpoints for login, registration, and profile fetch
+   * Stores user credentials and admin info
 
-#### Setup
+2. **Blog Service**
 
-```bash
+   * Python FastAPI
+   * SQLite database (POC) for blog posts
+   * Endpoints for create, read, update, delete posts
+   * Supports image uploads for headers
+   * Returns JSON for frontend consumption
+
+3. **Comment Service**
+
+   * Go + Gin framework
+   * SQLite database for comments
+   * Endpoints: GET `/comments/:postId`, POST `/comments/:postId`
+   * Stores comment text, username, and timestamp
+
+### Frontend
+
+* SPA built with HTML, CSS, and vanilla JS
+* Consumes backend APIs for blogs, users, and comments
+* Implements dynamic rendering, login state management, and CRUD operations
+* Hero section carousel for featured posts
+* Search and filter for posts
+* Admin-only controls for creating, editing, deleting posts
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+* Node.js (for User Service)
+* Python 3.12+ (for Blog Service)
+* Go 1.24+ (for Comment Service)
+* SQLite3
+* Browser for frontend testing
+
+### Running the Services
+
+#### User Service
+
+```
 cd backend/user-service
 npm install
 npm start
 ```
 
-#### Notes
+#### Blog Service
 
-* JWT secret and DB URL stored in `.env`.
-* Only registered admins can create, edit, and delete blog posts.
-
----
-
-### 2. Blog Service (Python + FastAPI)
-
-**Purpose**: Handles blog CRUD operations.
-
-#### Endpoints
-
-* `POST /blogs` – Create blog post (admin only)
-* `GET /blogs` – List all blog posts
-* `GET /blogs/{id}` – Get specific blog post
-* `PUT /blogs/{id}` – Update blog post (admin only)
-* `DELETE /blogs/{id}` – Delete blog post (admin only)
-
-#### Setup
-
-```bash
+```
 cd backend/blog-service
 python -m venv venv
 source venv/bin/activate
@@ -125,107 +161,73 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 5001
 ```
 
-#### Notes
+#### Comment Service
 
-* Stores blog title, content, tags, author, and image URL.
-* Supports image uploads via File Service.
-* Blog posts are displayed in reverse chronological order on the frontend.
-
----
-
-### 3. Comment Service (Go + Gin)
-
-**Purpose**: Manages comments for blog posts.
-
-#### Endpoints
-
-* `GET /comments/{postId}` – Fetch comments for a blog post
-* `POST /comments/{postId}` – Add a comment
-
-#### Setup
-
-```bash
+```
 cd backend/comment-service
 go mod tidy
 go run main.go
 ```
 
-#### Notes
+### Running Frontend
 
-* Each comment stores `user_id`, `text`, and `created_at` timestamp.
-* Comments are displayed in reverse chronological order.
+Simply open `frontend/index.html` in your browser. Ensure that backend services are running on their respective ports:
 
----
-
-### 4. File Service (Node.js + Express)
-
-**Purpose**: Handles header image uploads.
-
-#### Endpoints
-
-* `POST /upload` – Upload image (returns URL for Blog Service)
-
-#### Setup
-
-```bash
-cd backend/file-service
-npm install
-npm start
-```
-
-#### Notes
-
-* Images are saved to local filesystem or NFS.
-* URL is used by Blog Service to display images in posts.
+* User Service: 5050
+* Blog Service: 5001
+* Comment Service: 5002
 
 ---
 
-## Frontend Usage
+## Usage
 
-* Open `frontend/index.html` in a browser or serve via HTTP server.
-* Hero images can be updated via the `/images` folder.
-* Admin login enables full CRUD for posts.
-* Search box filters posts by title or content in real-time.
-* New posts appear at the top of the feed.
-
----
-
-## Admin Workflow
-
-1. Admin registers or logs in.
-2. Creates, edits, or deletes blog posts.
-3. Posts include optional header images.
-4. Comments can be viewed and moderated.
-5. Hero images displayed via sliding carousel on homepage.
+1. Open the frontend in your browser.
+2. Admin can navigate to login/register section.
+3. After login, admin can create new posts using the form.
+4. Posts are displayed dynamically in the feed, latest first.
+5. Users can view post details, add comments, and see existing comments.
+6. Admin can edit or delete their own posts.
+7. Search box allows filtering posts by title or content.
+8. Hero section cycles through featured images automatically.
 
 ---
 
-## Contribution
+## Tech Stack
 
-1. Clone the repository.
-2. Install dependencies per service.
-3. Run each service locally.
-4. Make changes in your branch.
-5. Submit a pull request for review.
+* **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+* **User Service**: Node.js, Express, JWT, SQLite
+* **Blog Service**: Python, FastAPI, SQLAlchemy, SQLite
+* **Comment Service**: Go, Gin, GORM, SQLite
+* **Media**: Local storage for images (header images for blogs)
 
 ---
 
-## Notes
+## Project Highlights
 
-* Only admin users can manage posts. General visitors can view posts and leave comments.
-* All services communicate via REST APIs with JSON payloads.
-* Images are served via File Service or Blog Service.
-* Designed for full DevOps-friendly deployment and modular extensibility.
+* Multi-service architecture demonstrating microservices interaction.
+* Fully functional CRUD for blog management.
+* Admin authentication and role-based access control.
+* Dynamic and responsive frontend SPA.
+* Comment system with real-time updates.
+* File upload handling and dynamic media rendering.
+
+---
+
+## Future Enhancements
+
+* Move to PostgreSQL or MySQL for production.
+* Implement JWT authentication on frontend for all API requests.
+* Add pagination for blog feed.
+* Add categories and tags filtering with backend support.
+* Implement user roles beyond admin (readers, moderators, etc.).
+* Deploy on cloud platforms for full POC deployment.
 
 ---
 
 ## Contact
 
-**BluDive Technologies**
-Email: [info@bludive.com](mailto:info@bludive.com)
-Website: [www.bludive.com](https://www.bludive.com)
-GitHub: [BluDive GitHub](https://github.com/bludive)
+For questions or support regarding this project, contact **BluDive Technologies Ltd.**
 
 ---
 
-*This README covers the complete BluInsights project including all backend services and frontend integration, suitable for production, demonstration, and DevOps POC workflows.*
+*BluInsights - Bringing tech insights to life.*
