@@ -1,6 +1,3 @@
-Here’s a comprehensive, detailed README for your **Blog Service** in markdown format. You can copy and paste it directly into a `README.md` file.
-
-```markdown
 # BluInsights Blog Service
 
 ## Overview
@@ -267,4 +264,4 @@ BluInsights Blog Service | FastAPI | SQLite | RESTful API
 ```
 
 ```
-```
+
