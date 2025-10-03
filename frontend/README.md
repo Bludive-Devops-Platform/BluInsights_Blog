@@ -131,17 +131,6 @@ open index.html
 
 ---
 
-## Future Enhancements
-
-* Pagination and infinite scroll for blog feed.
-* Filtering by category and tags.
-* Admin dashboard page for post management.
-* Enhanced comment moderation.
-* Integration with authentication tokens for admin-only access.
-* Responsive mobile menu improvements.
-
----
-
 ## License
 
 This frontend is part of the BluInsights POC project by BluDive Technologies and may be used internally for demonstration and learning purposes.
