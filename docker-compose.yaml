@@ -1,0 +1,69 @@
+services:
+  # -----------------------------
+  # User Service
+  # -----------------------------
+  user-service:
+    image: bluinsights-user-service
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      - PORT=5050
+      - JWT_SECRET=supersecretkey
+      - DB_URL=sqlite:///./users.db
+    volumes:
+      - ./user-service/database:/app/database
+    networks:
+      - bluinsights-network
+
+  # -----------------------------
+  # Blog Service
+  # -----------------------------
+  blog-service:
+    image: bluinsights-blog-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./blog-service/database:/app/database
+      - ./images:/images   # Persist uploaded images
+    networks:
+      - bluinsights-network
+
+  # -----------------------------
+  # Comment Service
+  # -----------------------------
+  comment-service:
+    image: bluinsights-comment-service
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./comment-service/comments.db:/app/comments.db
+    networks:
+      - bluinsights-network
+
+  # -----------------------------
+  # Frontend (Static HTML served by Nginx)
+  # -----------------------------
+  frontend:
+    image: bluinsights-frontend-service
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    depends_on:
+      - blog-service
+      - user-service
+      - comment-service
+    networks:
+      - bluinsights-network
+
+# -----------------------------
+# Network
+# -----------------------------
+networks:
+  bluinsights-network:
+    driver: bridge
+

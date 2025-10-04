@@ -172,7 +172,7 @@ setInterval(() => {
 async function loadPosts() {
   blogFeed.innerHTML = '';
   try {
-    const res = await fetch('http://localhost:5001/blogs');
+    const res = await fetch('http://192.168.50.10:5001/blogs');
     const posts = await res.json();
     // Show latest posts first
     posts.reverse().forEach(post => renderBlogPost(post));
@@ -193,7 +193,7 @@ async function showPostDetail(postId){
   document.querySelector('.sidebar').style.opacity = 0;
 
   try {
-    const res = await fetch(`http://localhost:5001/blogs/${postId}`);
+    const res = await fetch(`http://192.168.50.10:5001/blogs/${postId}`);
     const post = await res.json();
 
     document.getElementById('postTitle').innerText = post.title;
@@ -203,7 +203,7 @@ async function showPostDetail(postId){
 
     // Fetch comments for this post
     try {
-      const commentsRes = await fetch(`http://localhost:5002/comments/${postId}`);
+      const commentsRes = await fetch(`http://192.168.50.10:5002/comments/${postId}`);
       const comments = await commentsRes.json();
       const commentList = document.getElementById('commentList');
       commentList.innerHTML = ''; // Clear previous
@@ -263,7 +263,7 @@ document.getElementById('commentForm').addEventListener('submit', async (e) => {
   if (!text) return;
 
   try {
-    const res = await fetch(`http://localhost:5002/comments/${window.currentPostId}`, {
+    const res = await fetch(`http://192.168.50.10:5002/comments/${window.currentPostId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
