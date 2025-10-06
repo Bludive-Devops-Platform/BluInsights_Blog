@@ -1,0 +1,16 @@
+# Go files
+*.go
+!main.go
+*.test
+
+# Editor and OS
+*.swp
+*.DS_Store
+
+# Go modules cache
+vendor/
+node_modules/
+
+# Env and DB
+*.db
+

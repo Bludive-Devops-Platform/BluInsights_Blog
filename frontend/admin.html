@@ -148,6 +148,9 @@ nav ul li a{color:#fff;font-weight:500;cursor:pointer;}
 </footer>
 
 <script>
+
+const API_BASE_URL = '';
+
 // --- State ---
 let loggedIn = false;
 let editingPostId = null;
@@ -198,7 +201,7 @@ async function loadPosts() {
   blogFeed.innerHTML = '';
   try {
     console.log("Fetching posts...");
-    const res = await fetch('http://192.168.50.10:5001/blogs');
+    const res = await fetch(`${API_BASE_URL}/blogs`);
     const posts = await res.json();
     posts.sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
     posts.forEach(post => renderBlogPost(post));
@@ -231,7 +234,7 @@ async function showPostDetail(postId) {
   document.querySelector('.sidebar').style.opacity = 0;
 
   try {
-    const res = await fetch(`http://192.168.50.10:5001/blogs/${postId}`);
+    const res = await fetch(`${API_BASE_URL}/blogs/${postId}`);
     const post = await res.json();
     document.getElementById('postTitle').innerText = post.title;
     document.getElementById('postMeta').innerText = `By ${post.author} | ${new Date(post.created_at).toLocaleDateString()}`;
@@ -246,7 +249,7 @@ async function showPostDetail(postId) {
       document.getElementById('deletePostBtn').addEventListener('click', async () => {
         if (confirm('Are you sure?')) {
           try {
-            const delRes = await fetch(`http://192.168.50.10:5001/blogs/${postId}`, {
+            const delRes = await fetch(`${API_BASE_URL}/blogs/${postId}`, {
               method: 'DELETE'
             });
             const data = await delRes.json();
@@ -272,7 +275,7 @@ async function showPostDetail(postId) {
 
     // Load comments
     try {
-      const commentsRes = await fetch(`http://192.168.50.10:5002/comments/${postId}`);
+      const commentsRes = await fetch(`${API_BASE_URL}/comments/${postId}`);
       const comments = await commentsRes.json();
       const commentList = document.getElementById('commentList');
       commentList.innerHTML = '';
@@ -321,7 +324,7 @@ document.getElementById('createPostSection').addEventListener('submit', async fu
   try {
     let res;
     if (editingPostId) {
-      res = await fetch(`http://192.168.50.10:5001/blogs/${editingPostId}`, {
+      res = await fetch(`${API_BASE_URL}/blogs/${editingPostId}`, {
         method: 'PUT',
         headers: {
           'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
@@ -330,7 +333,7 @@ document.getElementById('createPostSection').addEventListener('submit', async fu
       });
       editingPostId = null;
     } else {
-      res = await fetch('http://192.168.50.10:5001/blogs', {
+      res = await fetch('${API_BASE_URL}/blogs', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
@@ -363,7 +366,7 @@ document.getElementById('loginSubmit').addEventListener('click', async () => {
   if (!username || !password) { alert('Please enter username and password'); return; }
 
   try {
-    const res = await fetch('http://192.168.50.10:5050/api/login', {
+    const res = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -391,7 +394,7 @@ document.getElementById('registerSubmit').addEventListener('click', async () => 
   if (!username || !password) { alert('Please fill in all fields'); return; }
 
   try {
-    const res = await fetch('http://192.168.50.10:5050/api/register', {
+    const res = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -441,7 +444,7 @@ document.getElementById('commentForm').addEventListener('submit', async (e) => {
   if (!text) return;
 
   try {
-    const res = await fetch(`http://192.168.50.10:5002/comments/${window.currentPostId}`, {
+    const res = await fetch(`${API_BASE_URL}/comments/${window.currentPostId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -2,9 +2,9 @@
 FROM python:3.11-slim
 
 # Set working directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
@@ -12,15 +12,18 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy application code
 COPY app ./app
 
-# Create a folder for SQLite database and images
-RUN mkdir /usr/src/app/database /usr/src/app/images
+# Create folders for database and image storage (used in Kubernetes)
+RUN mkdir -p /app/data /app/images
 
-# Expose port
+# Environment variables (can be overridden in container runtime)
+ENV DB_PATH="/app/data/blog.db"
+ENV IMAGE_DIR="/app/images"
+ENV IMAGE_BASE_URL="http://localhost:5001/images"
+ENV PORT=5001
+
+# Expose app port
 EXPOSE 5001
-
-# Set environment variable for database URL (relative to container)
-ENV DATABASE_URL="sqlite:///./database/blog.db"
 
 # Start FastAPI server
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5001"]
-
+ 

@@ -134,6 +134,9 @@ form button:hover{background:#0b65c2;}
 </footer>
 
 <script>
+
+const API_BASE_URL = '';
+
 // Public blog state
 const heroSection = document.getElementById('heroSection');
 const blogFeed = document.getElementById('blogFeed');
@@ -172,7 +175,7 @@ setInterval(() => {
 async function loadPosts() {
   blogFeed.innerHTML = '';
   try {
-    const res = await fetch('http://192.168.50.10:5001/blogs');
+    const res = await fetch(`${API_BASE_URL}/blogs`);
     const posts = await res.json();
     // Show latest posts first
     posts.reverse().forEach(post => renderBlogPost(post));
@@ -193,7 +196,7 @@ async function showPostDetail(postId){
   document.querySelector('.sidebar').style.opacity = 0;
 
   try {
-    const res = await fetch(`http://192.168.50.10:5001/blogs/${postId}`);
+    const res = await fetch(`${API_BASE_URL}/blogs/${postId}`);
     const post = await res.json();
 
     document.getElementById('postTitle').innerText = post.title;
@@ -203,7 +206,7 @@ async function showPostDetail(postId){
 
     // Fetch comments for this post
     try {
-      const commentsRes = await fetch(`http://192.168.50.10:5002/comments/${postId}`);
+      const commentsRes = await fetch(`${API_BASE_URL}/comments/${postId}`);
       const comments = await commentsRes.json();
       const commentList = document.getElementById('commentList');
       commentList.innerHTML = ''; // Clear previous
@@ -263,7 +266,7 @@ document.getElementById('commentForm').addEventListener('submit', async (e) => {
   if (!text) return;
 
   try {
-    const res = await fetch(`http://192.168.50.10:5002/comments/${window.currentPostId}`, {
+    const res = await fetch(`${API_BASE_URL}/comments/${window.currentPostId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

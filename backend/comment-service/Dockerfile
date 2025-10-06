@@ -30,11 +30,20 @@ RUN go build -o comment-service main.go
 # ----------------------
 FROM alpine:3.21
 
+# Add dependencies for SQLite and timezone support
+RUN apk add --no-cache sqlite tzdata
+
 # Set working directory
 WORKDIR /app
 
 # Copy the built binary from builder
 COPY --from=builder /app/comment-service .
+
+# Copy any additional required folders (e.g., migrations, templates, etc.)
+COPY .env .env
+
+# Ensure database folder exists
+RUN mkdir -p /app/database
 
 # Expose port
 EXPOSE 5002

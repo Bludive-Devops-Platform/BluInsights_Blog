@@ -1,7 +1,11 @@
+require('dotenv').config();
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(process.env.DB_PATH || 'users.db');
 
-// Create users table if not exists
+// Load from environment or fallback
+const dbPath = process.env.DB_PATH || './users.db';
+const db = new sqlite3.Database(dbPath);
+
+// Create table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
@@ -9,3 +13,4 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
 )`);
 
 module.exports = db;
+ 
