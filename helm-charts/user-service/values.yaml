@@ -1,0 +1,31 @@
+replicaCount: 2
+
+image:
+  repository: bludivehub/bluinsights-user-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5050
+
+env:
+  - name: DB_PATH
+    value: /data/users.db
+  - name: JWT_SECRET
+    value: supersecretkey
+
+persistence:
+  enabled: true
+  storageClass: "nfs-shared"
+  size: 500Mi
+  accessMode: ReadWriteOnce
+      
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: []
+ 

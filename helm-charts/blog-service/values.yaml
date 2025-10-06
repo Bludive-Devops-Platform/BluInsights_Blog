@@ -1,0 +1,38 @@
+replicaCount: 2
+
+image:
+  repository: bludivehub/bluinsights-blog-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5001
+
+env:
+  - name: DB_PATH
+    value: /app/database/blog.db
+  - name: IMAGE_DIR
+    value: /app/images
+  - name: IMAGE_BASE_URL
+    value: http://file-service:5055/images
+
+persistence:
+  images:
+    enabled: true
+    mountPath: /app/images
+    existingClaim: nfs-blog-images-pvc
+
+  database:
+    enabled: true
+    mountPath: /app/database
+    existingClaim: nfs-blog-db-pvc
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: []
+ 

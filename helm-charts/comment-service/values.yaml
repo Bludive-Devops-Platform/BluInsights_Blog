@@ -1,0 +1,28 @@
+replicaCount: 2
+
+image:
+  repository: bludivehub/bluinsights-comment-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5002
+
+env:
+  - name: DB_PATH
+    value: /app/database/comment.db
+
+persistence:
+  enabled: true
+  mountPath: /app/database
+  existingClaim: comment-sqlite-pvc
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: []
+ 
