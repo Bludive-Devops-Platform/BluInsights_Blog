@@ -11,7 +11,7 @@ pipeline {
             steps {
                 script {
                     // Checkout source code from GitHub
-                    git 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git'
+                    git 'https://github.com/Bludive-Devops-Platform/Bludinsights_Blog.git'
                 }
             }
         }
