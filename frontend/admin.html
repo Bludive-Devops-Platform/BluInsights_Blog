@@ -152,7 +152,7 @@ nav ul li a{color:#fff;font-weight:500;cursor:pointer;}
 const API_BASE_URL = '';
 
 // --- State ---
-let loggedIn = false;
+let loggedIn = true;
 let editingPostId = null;
 
 const createBtn = document.getElementById('createPostBtn');
@@ -168,12 +168,8 @@ const blogFeed = document.getElementById('blogFeed');
 
 // --- Update UI ---
 function updateUI() {
-  createBtn.style.display = loggedIn ? 'inline' : 'none';
-  loginBtn.style.display = loggedIn ? 'none' : 'inline';
-  registerBtn.style.display = loggedIn ? 'none' : 'inline';
-  loginSection.style.display = 'none';
-  registerSection.style.display = 'none';
-  createSection.style.display = loggedIn ? 'block' : 'none';
+  createBtn.style.display = 'inline';
+  createSection.style.display = 'block';  // Show post creation section immediately
 }
 updateUI();
 
@@ -333,7 +329,7 @@ document.getElementById('createPostSection').addEventListener('submit', async fu
       });
       editingPostId = null;
     } else {
-      res = await fetch('${API_BASE_URL}/blogs', {
+      res = await fetch(`${API_BASE_URL}/blogs`, {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
@@ -356,60 +352,6 @@ document.getElementById('createPostSection').addEventListener('submit', async fu
   } catch (err) {
     console.error("Error connecting to Blog Service:", err);
     alert('Error connecting to Blog Service');
-  }
-});
-
-// --- Admin Login ---
-document.getElementById('loginSubmit').addEventListener('click', async () => {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  if (!username || !password) { alert('Please enter username and password'); return; }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      loggedIn = true;
-      localStorage.setItem('username', username);
-      localStorage.setItem('token', data.token);
-      updateUI();
-      alert('Logged in successfully!');
-    } else {
-      alert(data.message || 'Login failed');
-    }
-  } catch (err) {
-    console.error("Login error:", err);
-    alert('Error connecting to server');
-  }
-});
-
-// --- Register Admin ---
-document.getElementById('registerSubmit').addEventListener('click', async () => {
-  const username = document.getElementById('regUsername').value;
-  const password = document.getElementById('regPassword').value;
-  if (!username || !password) { alert('Please fill in all fields'); return; }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert('Admin registered! You can now login.');
-      document.getElementById('regUsername').value = '';
-      document.getElementById('regPassword').value = '';
-    } else {
-      alert(data.message || 'Registration failed');
-    }
-  } catch (err) {
-    console.error("Register error:", err);
-    alert('Error connecting to server');
   }
 });
 

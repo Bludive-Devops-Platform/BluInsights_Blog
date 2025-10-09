@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: bludivehub/bluinsights-frontend-service
-  tag: latest
+  tag: v3
   pullPolicy: IfNotPresent
 
 service:
