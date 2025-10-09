@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Decrypt secrets using SOPS
-                    sh 'sops -d secrets.yaml.enc > secrets.yaml'
+                    sh '/usr/local/bin/sops -d secrets.yaml.enc > secrets.yaml'
                 }
             }
         }
