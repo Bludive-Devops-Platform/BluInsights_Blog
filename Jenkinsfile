@@ -47,8 +47,8 @@ pipeline {
             steps {
                 script {
                     // Docker login
-                    def dockerHubUsername = sh(script: "cat secrets.yaml | grep dockerhub | awk '{print $2}'", returnStdout: true).trim()
-                    def dockerHubPassword = sh(script: "cat secrets.yaml | grep dockerhub | awk '{print $4}'", returnStdout: true).trim()
+                    def dockerHubUsername = sh(script: "cat secrets.yaml | grep dockerhub | awk '{print \$2}'", returnStdout: true).trim()
+                    def dockerHubPassword = sh(script: "cat secrets.yaml | grep dockerhub | awk '{print \$4}'", returnStdout: true).trim()
 
                     // Login to DockerHub
                     sh "docker login -u ${dockerHubUsername} -p ${dockerHubPassword}"
