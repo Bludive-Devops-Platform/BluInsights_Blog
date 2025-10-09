@@ -10,8 +10,8 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 script {
-                    // Checkout source code from GitHub
-                    git 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git'
+                    // Checkout source code from GitHub using GitHub credentials
+                    git credentialsId: 'github-jenkins-cred', url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git'
                 }
             }
         }
