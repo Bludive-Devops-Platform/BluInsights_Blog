@@ -40,7 +40,7 @@ WORKDIR /app
 COPY --from=builder /app/comment-service .
 
 # Copy any additional required folders (e.g., migrations, templates, etc.)
-COPY .env .env
+#COPY .env .env
 
 # Ensure database folder exists
 RUN mkdir -p /app/database
