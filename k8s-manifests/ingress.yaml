@@ -15,6 +15,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: blog-service
+            name: user-service
             port:
-              number: 5001
+              number: 5050
