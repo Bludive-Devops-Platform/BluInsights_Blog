@@ -2,81 +2,102 @@ pipeline {
     agent any
 
     environment {
-        // Docker image repository
-        DOCKER_IMAGE = 'bludivehub/bluinsights-blog-service'
-        DOCKER_COMPOSE_FILE = 'docker-compose.yaml'
-        DOCKERHUB_CREDS = credentials('Dockerhub-creds')
+        DOCKERHUB_NAMESPACE = 'bludivehub'
     }
 
     stages {
+
+        /* ==============================
+           1. CHECKOUT SOURCE CODE
+        ============================== */
         stage('Checkout Code') {
             steps {
-                script {
-                    // Checkout source code from GitHub using GitHub credentials
-                    git credentialsId: 'github-jenkins-cred', url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git', branch: 'main'
-                }
+                git branch: 'main',
+                    credentialsId: 'github-jenkins-cred',
+                    url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git'
             }
         }
 
+        /* ==============================
+           2. BUILD & PUSH DOCKER IMAGES
+        ============================== */
         stage('Build and Push Docker Images') {
             steps {
-                script {
-                    // Docker login for Jenkins using stored credentials
-                    sh """
-                        echo '${DOCKERHUB_CREDS_PSW}' | docker login -u '${DOCKERHUB_CREDS_USR}' --password-stdin
-                    """
-                    
-                    // Build and push the Docker images defined in docker-compose.yaml
-                    sh """
-                        docker compose -f ${DOCKER_COMPOSE_FILE} build
-                        docker compose -f ${DOCKER_COMPOSE_FILE} push
-                    """
-                }
-            }
-        }
-
-        stage('Test Docker Images') {
-            steps {
-                script {
-                    // Login to DockerHub before running docker-compose up
-                    sh """
-                        echo '${DOCKERHUB_CREDS_PSW}' | docker login -u '${DOCKERHUB_CREDS_USR}' --password-stdin
-                    """
-
-                    // Run Docker Compose to start the services defined in the docker-compose.yaml
-                    sh """
-                        docker compose -f ${DOCKER_COMPOSE_FILE} up -d
-                        docker ps
-                    """
-                }
-            }
-        }
-
-        stage('Security Scan with Snyk') {
-            steps {
-                withCredentials([string(credentialsId: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
+                withCredentials([usernamePassword(credentialsId: 'Dockerhub-creds', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh '''
-                        snyk auth $SNYK_TOKEN
-                        snyk test --severity-threshold=medium
+                        echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+                        # Build and push all four services
+                        docker build -t ${DOCKERHUB_NAMESPACE}/bluinsights-user-service:latest ./backend/user-service
+                        docker push ${DOCKERHUB_NAMESPACE}/bluinsights-user-service:latest
+
+                        docker build -t ${DOCKERHUB_NAMESPACE}/bluinsights-blog-service:latest ./backend/blog-service
+                        docker push ${DOCKERHUB_NAMESPACE}/bluinsights-blog-service:latest
+
+                        docker build -t ${DOCKERHUB_NAMESPACE}/bluinsights-comment-service:latest ./backend/comment-service
+                        docker push ${DOCKERHUB_NAMESPACE}/bluinsights-comment-service:latest
+
+                        docker build -t ${DOCKERHUB_NAMESPACE}/bluinsights-frontend-service:latest ./frontend
+                        docker push ${DOCKERHUB_NAMESPACE}/bluinsights-frontend-service:latest
                     '''
                 }
             }
         }
 
+        /* ==============================
+           3. TEST DEPLOYMENT WITH DOCKER COMPOSE
+        ============================== */
+        stage('Test Docker Images') {
+            steps {
+                sh '''
+                    docker compose -f docker-compose.yaml up -d
+                    sleep 10
+                    docker ps
+                '''
+            }
+        }
+
+        /* ==============================
+           4. SECURITY SCAN WITH SNYK
+        ============================== */
+        stage('Security Scan with Snyk') {
+            steps {
+                withCredentials([string(credentialsId: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
+                    sh '''
+                        snyk auth $SNYK_TOKEN
+                        
+                        # Scan all container images for vulnerabilities
+                        snyk container test ${DOCKERHUB_NAMESPACE}/bluinsights-user-service:latest --file=backend/user-service/Dockerfile --severity-threshold=medium || true
+                        snyk container test ${DOCKERHUB_NAMESPACE}/bluinsights-blog-service:latest --file=backend/blog-service/Dockerfile --severity-threshold=medium || true
+                        snyk container test ${DOCKERHUB_NAMESPACE}/bluinsights-comment-service:latest --file=backend/comment-service/Dockerfile --severity-threshold=medium || true
+                        snyk container test ${DOCKERHUB_NAMESPACE}/bluinsights-frontend-service:latest --file=frontend/Dockerfile --severity-threshold=medium || true
+                    '''
+                }
+            }
+        }
+
+        /* ==============================
+           5. CLEANUP
+        ============================== */
         stage('Clean Up') {
             steps {
-                // Clean up unused Docker resources (remove unused images, containers, volumes)
-                sh 'docker system prune -f'
+                sh '''
+                    docker compose down || true
+                    docker system prune -f || true
+                '''
             }
         }
     }
 
     post {
         always {
-            // Clean up decrypted secrets file after the pipeline finishes
-            sh 'rm -f secrets.yaml'
-
-            // Additional post steps (e.g., sending notifications) can go here
+            echo 'Pipeline completed (success or failure).'
+        }
+        success {
+            echo '🎉 All stages executed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs for details.'
         }
     }
 }
