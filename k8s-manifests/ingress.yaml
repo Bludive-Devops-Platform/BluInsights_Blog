@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: bluinsights-ingress
+  name: frontend-ingress
   namespace: bluinsights
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
