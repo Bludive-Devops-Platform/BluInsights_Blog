@@ -2,57 +2,67 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'bludivehub/bluinsights-blog-service'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yaml'
+        DOCKERHUB_CREDS = credentials('Dockerhub-creds')
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    credentialsId: 'github-jenkins-cred',
-                    url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git'
+                git credentialsId: 'github-jenkins-cred', url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git', branch: 'main'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build and Push Docker Images') {
             steps {
                 script {
-                    sh 'docker build -t ${DOCKER_IMAGE} .'
-                }
-            }
-        }
-
-        stage('Test Docker Image') {
-            steps {
-                script {
-                    sh 'docker run --rm ${DOCKER_IMAGE} echo "Test Passed!"'
-                }
-            }
-        }
-
-        stage('Push Docker Image to DockerHub') {
-            environment {
-                DOCKER_CREDS = credentials('Dockerhub-creds')
-            }
-            steps {
-                script {
+                    // Login to DockerHub
                     sh """
-                        echo "${DOCKER_CREDS_PSW}" | docker login -u "${DOCKER_CREDS_USR}" --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        echo '${DOCKERHUB_CREDS_PSW}' | docker login -u '${DOCKERHUB_CREDS_USR}' --password-stdin
+                    """
+
+                    // Build all the images using Docker Compose
+                    sh """
+                        docker compose -f ${DOCKER_COMPOSE_FILE} build
+                    """
+
+                    // Push all the images to DockerHub
+                    sh """
+                        docker compose -f ${DOCKER_COMPOSE_FILE} push
                     """
                 }
             }
         }
 
-        stage('Snyk Security Scan') {
-            environment {
-                SNYK_TOKEN = credentials('snyk-api-token')
-            }
+        stage('Test Docker Images') {
             steps {
                 script {
+                    // Test all services after building, using a simple test container run
                     sh """
-                        snyk auth ${SNYK_TOKEN}
-                        snyk test --docker ${DOCKER_IMAGE} || true
+                        docker compose -f ${DOCKER_COMPOSE_FILE} up -d
+                        docker ps  # Check if the services are running
+                    """
+                }
+            }
+        }
+
+        stage('Security Scan with Snyk') {
+            steps {
+                script {
+                    // Run security scan with Snyk on all images (build and push will be scanned)
+                    sh """
+                        snyk container test --all-projects
+                    """
+                }
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                script {
+                    // Clean up containers and volumes to save space
+                    sh """
+                        docker compose -f ${DOCKER_COMPOSE_FILE} down --volumes --rmi all
                     """
                 }
             }
@@ -61,8 +71,7 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline completed. Cleaning workspace...'
-            cleanWs()
+            echo 'Pipeline completed!'
         }
     }
 }
