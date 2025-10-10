@@ -2,6 +2,8 @@ pipeline {
     agent any
 
     environment {
+        // Docker image repository
+        DOCKER_IMAGE = 'bludivehub/bluinsights-blog-service'
         DOCKER_COMPOSE_FILE = 'docker-compose.yaml'
         DOCKERHUB_CREDS = credentials('Dockerhub-creds')
     }
@@ -9,25 +11,24 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git credentialsId: 'github-jenkins-cred', url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git', branch: 'main'
+                script {
+                    // Checkout source code from GitHub using GitHub credentials
+                    git credentialsId: 'github-jenkins-cred', url: 'https://github.com/Bludive-Devops-Platform/BluInsights_Blog.git', branch: 'main'
+                }
             }
         }
 
         stage('Build and Push Docker Images') {
             steps {
                 script {
-                    // Login to DockerHub
+                    // Docker login for Jenkins using stored credentials
                     sh """
                         echo '${DOCKERHUB_CREDS_PSW}' | docker login -u '${DOCKERHUB_CREDS_USR}' --password-stdin
                     """
-
-                    // Build all the images using Docker Compose
+                    
+                    // Build and push the Docker images defined in docker-compose.yaml
                     sh """
                         docker compose -f ${DOCKER_COMPOSE_FILE} build
-                    """
-
-                    // Push all the images to DockerHub
-                    sh """
                         docker compose -f ${DOCKER_COMPOSE_FILE} push
                     """
                 }
@@ -37,10 +38,15 @@ pipeline {
         stage('Test Docker Images') {
             steps {
                 script {
-                    // Test all services after building, using a simple test container run
+                    // Login to DockerHub before running docker-compose up
+                    sh """
+                        echo '${DOCKERHUB_CREDS_PSW}' | docker login -u '${DOCKERHUB_CREDS_USR}' --password-stdin
+                    """
+
+                    // Run Docker Compose to start the services defined in the docker-compose.yaml
                     sh """
                         docker compose -f ${DOCKER_COMPOSE_FILE} up -d
-                        docker ps  # Check if the services are running
+                        docker ps
                     """
                 }
             }
@@ -49,29 +55,26 @@ pipeline {
         stage('Security Scan with Snyk') {
             steps {
                 script {
-                    // Run security scan with Snyk on all images (build and push will be scanned)
-                    sh """
-                        snyk container test --all-projects
-                    """
+                    // Perform a security scan with Snyk (ensure you have the snyk plugin and credentials)
+                    snykSecurityCheck('snyk-api-token')  // Use the appropriate Snyk credentials ID in Jenkins
                 }
             }
         }
 
         stage('Clean Up') {
             steps {
-                script {
-                    // Clean up containers and volumes to save space
-                    sh """
-                        docker compose -f ${DOCKER_COMPOSE_FILE} down --volumes --rmi all
-                    """
-                }
+                // Clean up unused Docker resources (remove unused images, containers, volumes)
+                sh 'docker system prune -f'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed!'
+            // Clean up decrypted secrets file after the pipeline finishes
+            sh 'rm -f secrets.yaml'
+
+            // Additional post steps (e.g., sending notifications) can go here
         }
     }
 }
