@@ -45,7 +45,7 @@ pipeline {
         }
 
         /* ==============================
-           3. TEST DEPLOYMENT WITH DOCKER COMPOSE
+           3. TEST DOCKER IMAGES LOCALLY
         ============================== */
         stage('Test Docker Images') {
             steps {
@@ -93,13 +93,21 @@ pipeline {
         ============================== */
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([kubeconfigFile(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
                     sh '''
-                        echo "Deploying to Kubernetes cluster..."
-                        kubectl apply -f k8s-manifests/namespace.yaml
-                        kubectl apply -f k8s-manifests/
-                        echo "Waiting for rollout to complete..."
-                        kubectl rollout status deployment/frontend-service -n bluinsights
+                        echo "🚀 Deploying to Kubernetes cluster..."
+
+                        # Check cluster connection
+                        kubectl --kubeconfig=$KUBECONFIG cluster-info
+
+                        # Apply namespace and manifests
+                        kubectl --kubeconfig=$KUBECONFIG apply -f k8s-manifests/namespace.yaml
+                        kubectl --kubeconfig=$KUBECONFIG apply -f k8s-manifests/
+
+                        # Wait for rollout
+                        echo "⏳ Waiting for rollout to complete..."
+                        kubectl --kubeconfig=$KUBECONFIG rollout status deployment/frontend-service -n bluinsights
+
                         echo "✅ Deployment to Kubernetes successful!"
                     '''
                 }
