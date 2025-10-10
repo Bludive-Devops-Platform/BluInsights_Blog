@@ -87,6 +87,24 @@ pipeline {
                 '''
             }
         }
+
+        /* ==============================
+           6. DEPLOY TO KUBERNETES
+        ============================== */
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([kubeconfigFile(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        echo "Deploying to Kubernetes cluster..."
+                        kubectl apply -f k8s-manifests/namespace.yaml
+                        kubectl apply -f k8s-manifests/
+                        echo "Waiting for rollout to complete..."
+                        kubectl rollout status deployment/frontend-service -n bluinsights
+                        echo "✅ Deployment to Kubernetes successful!"
+                    '''
+                }
+            }
+        }
     }
 
     post {
