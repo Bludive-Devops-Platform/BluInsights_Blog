@@ -50,7 +50,7 @@ services:
     image: bludivehub/bluinsights-frontend-service:latest
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./frontend:/usr/share/nginx/html
     depends_on:
