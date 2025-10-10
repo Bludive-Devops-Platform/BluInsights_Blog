@@ -54,9 +54,11 @@ pipeline {
 
         stage('Security Scan with Snyk') {
             steps {
-                script {
-                    // Perform a security scan with Snyk (ensure you have the snyk plugin and credentials)
-                    snykSecurityCheck('snyk-api-token')  // Use the appropriate Snyk credentials ID in Jenkins
+                withCredentials([string(credentialsId: 'snyk-api-token', variable: 'SNYK_TOKEN')]) {
+                    sh '''
+                        snyk auth $SNYK_TOKEN
+                        snyk test --severity-threshold=medium
+                    '''
                 }
             }
         }
