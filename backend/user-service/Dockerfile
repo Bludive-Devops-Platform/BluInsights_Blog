@@ -12,7 +12,7 @@ RUN npm install --production
 
 # Step 5: Copy source code
 COPY ./src ./src
-COPY .env ./
+#COPY .env ./
 
 # Step 6: Expose port (match your .env PORT)
 EXPOSE 5050
