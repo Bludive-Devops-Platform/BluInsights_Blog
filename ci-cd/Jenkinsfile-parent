@@ -1,0 +1,27 @@
+@Library('ci') _
+
+pipeline {
+    agent any
+    stages {
+        stage('Trigger Child Pipelines') {
+            parallel {
+                stage('Blog Service') {
+                    steps {
+                        build job: 'ci-cd/blog/Jenkinsfile', wait: true
+                    }
+                }
+                stage('Comment Service') {
+                    steps {
+                        build job: 'ci-cd/comment/Jenkinsfile', wait: true
+                    }
+                }
+                stage('Frontend Service') {
+                    steps {
+                        build job: 'ci-cd/frontend/Jenkinsfile', wait: true
+                    }
+                }
+            }
+        }
+    }
+}
+

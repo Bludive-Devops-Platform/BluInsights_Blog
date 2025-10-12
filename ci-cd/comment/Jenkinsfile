@@ -1,0 +1,37 @@
+@Library('ci') _
+
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = "bludivehub/bluinsights-comment-service"
+        IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
+        REGISTRY_CREDENTIALS = 'dockerhub-credentials'
+        NAMESPACE = 'bluinsights'
+    }
+    stages {
+        stage('Build & Scan Docker') {
+            steps {
+                script {
+                    docker.buildAndScan('comment-service', './backend/comment-service', IMAGE_TAG)
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.pushImage(IMAGE_TAG, REGISTRY_CREDENTIALS)
+                }
+            }
+        }
+        stage('Deploy via Helm') {
+            steps {
+                script {
+                    helm.deployHelmChart('comment-service', '../../helm-charts/comment-service', NAMESPACE, [
+                        'image.tag': env.BUILD_NUMBER
+                    ])
+                }
+            }
+        }
+    }
+}
+
