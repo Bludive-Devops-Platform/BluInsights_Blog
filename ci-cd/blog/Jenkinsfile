@@ -8,6 +8,7 @@ pipeline {
         NAMESPACE = 'bluinsights'
         CHART_PATH = '../../helm-charts/blog-service'
         SNYK_TOKEN = credentials('snyk-api-token')
+	DOCKERFILE = './backend/blog-service/Dockerfile'
     }
 
     stages {
@@ -25,7 +26,7 @@ pipeline {
                 script {
                     echo "Scanning image ${IMAGE_TAG} with Snyk"
                     sh """
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=Dockerfile
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE}
                     """
                 }
             }
