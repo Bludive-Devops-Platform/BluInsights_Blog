@@ -1,36 +1,75 @@
-@Library('ci') _
-
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = "bludivehub/bluinsights-frontend-service"
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         NAMESPACE = 'bluinsights'
+        CHART_PATH = '../../helm-charts/frontend-service'
+        SNYK_TOKEN = credentials('snyk-api-token') // Jenkins secret for Snyk
     }
+
     stages {
-        stage('Build & Scan Docker') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    docker.buildAndScan('frontend-service', './frontend', IMAGE_TAG)
+                    echo "Building Docker image ${IMAGE_TAG}"
+                    sh "docker build -t ${IMAGE_TAG} ./frontend"
                 }
             }
         }
+
+        stage('Scan Docker Image for Vulnerabilities') {
+            steps {
+                script {
+                    echo "Scanning image ${IMAGE_TAG} with Snyk"
+                    sh """
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --org=bludive --file=Dockerfile
+                    """
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.pushImage(IMAGE_TAG, REGISTRY_CREDENTIALS)
+                    echo "Pushing Docker image ${IMAGE_TAG} to DockerHub"
+                    withCredentials([usernamePassword(
+                        credentialsId: REGISTRY_CREDENTIALS, 
+                        usernameVariable: 'DOCKER_USER', 
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh """
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push ${IMAGE_TAG}
+                        """
+                    }
                 }
             }
         }
+
         stage('Deploy via Helm') {
             steps {
                 script {
-                    helm.deployHelmChart('frontend-service', '../../helm-charts/frontend-service', NAMESPACE, [
-                        'image.tag': env.BUILD_NUMBER
-                    ])
+                    echo "Deploying Helm chart for frontend-service"
+                    def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
+                    sh "helm upgrade --install frontend-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning up local Docker images"
+            sh "docker rmi ${IMAGE_TAG} || true"
+        }
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed. Check the logs for errors."
         }
     }
 }

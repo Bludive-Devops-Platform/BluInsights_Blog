@@ -1,37 +1,61 @@
-@Library('ci') _
-
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = "bludivehub/bluinsights-comment-service"
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         NAMESPACE = 'bluinsights'
+        CHART_PATH = '../../helm-charts/comment-service'
+        SNYK_TOKEN = credentials('snyk-api-token')
     }
+
     stages {
-        stage('Build & Scan Docker') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    docker.buildAndScan('comment-service', './backend/comment-service', IMAGE_TAG)
+                    sh "docker build -t ${IMAGE_TAG} ./backend/comment-service"
                 }
             }
         }
+
+        stage('Scan Docker Image for Vulnerabilities') {
+            steps {
+                script {
+                    sh "snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=Dockerfile"
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.pushImage(IMAGE_TAG, REGISTRY_CREDENTIALS)
+                    withCredentials([usernamePassword(
+                        credentialsId: REGISTRY_CREDENTIALS, 
+                        usernameVariable: 'DOCKER_USER', 
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh """
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push ${IMAGE_TAG}
+                        """
+                    }
                 }
             }
         }
+
         stage('Deploy via Helm') {
             steps {
                 script {
-                    helm.deployHelmChart('comment-service', '../../helm-charts/comment-service', NAMESPACE, [
-                        'image.tag': env.BUILD_NUMBER
-                    ])
+                    def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
+                    sh "helm upgrade --install comment-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
                 }
             }
         }
     }
-}
 
+    post {
+        always { sh "docker rmi ${IMAGE_TAG} || true" }
+    }
+}
+ 
