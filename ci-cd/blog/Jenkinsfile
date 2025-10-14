@@ -6,7 +6,7 @@ pipeline {
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'Dockerhub-creds'
         NAMESPACE = 'bluinsights'
-        CHART_PATH = '../../helm-charts/blog-service'
+        CHART_PATH = "${env.WORKSPACE}/helm-charts/blog-service"
         SNYK_TOKEN = credentials('snyk-api-token')
         DOCKERFILE = './backend/blog-service/Dockerfile'
     }
