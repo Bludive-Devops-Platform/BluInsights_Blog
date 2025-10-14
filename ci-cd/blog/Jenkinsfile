@@ -8,7 +8,7 @@ pipeline {
         NAMESPACE = 'bluinsights'
         CHART_PATH = '../../helm-charts/blog-service'
         SNYK_TOKEN = credentials('snyk-api-token')
-	DOCKERFILE = './backend/blog-service/Dockerfile'
+        DOCKERFILE = './backend/blog-service/Dockerfile'
     }
 
     stages {
@@ -37,8 +37,8 @@ pipeline {
                 script {
                     echo "Pushing Docker image ${IMAGE_TAG}"
                     withCredentials([usernamePassword(
-                        credentialsId: REGISTRY_CREDENTIALS, 
-                        usernameVariable: 'DOCKER_USER', 
+                        credentialsId: REGISTRY_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_PASS'
                     )]) {
                         sh """
@@ -54,8 +54,11 @@ pipeline {
             steps {
                 script {
                     echo "Deploying Helm chart for blog-service"
-                    def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                    sh "helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+                    // Inject kubeconfig for cluster authentication
+                    withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
+                        def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
+                        sh "helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+                    }
                 }
             }
         }
