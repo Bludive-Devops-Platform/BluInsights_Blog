@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "bludivehub/bluinsights-frontend-service"
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-        REGISTRY_CREDENTIALS = 'dockerhub-credentials'
+        REGISTRY_CREDENTIALS = 'Dockerhub-creds'
         NAMESPACE = 'bluinsights'
         CHART_PATH = "${env.WORKSPACE}/helm-charts/frontend-service"
         SNYK_TOKEN = credentials('snyk-api-token')
