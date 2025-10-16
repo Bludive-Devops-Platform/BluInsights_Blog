@@ -6,8 +6,9 @@ pipeline {
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         NAMESPACE = 'bluinsights'
-        CHART_PATH = '../../helm-charts/comment-service'
+        CHART_PATH = "${env.WORKSPACE}/helm-charts/comment-service"
         SNYK_TOKEN = credentials('snyk-api-token')
+	DOCKERFILE = './backend/comment-service/Dockerfile'
     }
 
     stages {
@@ -22,7 +23,7 @@ pipeline {
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
-                    sh "snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=Dockerfile"
+                    sh "snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE}"
                 }
             }
         }
@@ -47,8 +48,11 @@ pipeline {
         stage('Deploy via Helm') {
             steps {
                 script {
-                    def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                    sh "helm upgrade --install comment-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+		    echo "Deploying Helm chart for comment-service"
+		    withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {	
+                    	def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
+                    	sh "helm upgrade --install comment-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+		    }
                 }
             }
         }

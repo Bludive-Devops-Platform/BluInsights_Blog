@@ -6,8 +6,9 @@ pipeline {
         IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
         REGISTRY_CREDENTIALS = 'dockerhub-credentials'
         NAMESPACE = 'bluinsights'
-        CHART_PATH = '../../helm-charts/frontend-service'
-        SNYK_TOKEN = credentials('snyk-api-token') // Jenkins secret for Snyk
+        CHART_PATH = "${env.WORKSPACE}/helm-charts/frontend-service"
+        SNYK_TOKEN = credentials('snyk-api-token')
+	DOCKERFILE = './frontend/Dockerfile'
     }
 
     stages {
@@ -25,7 +26,7 @@ pipeline {
                 script {
                     echo "Scanning image ${IMAGE_TAG} with Snyk"
                     sh """
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --org=bludive --file=Dockerfile
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --org=bludive --file=${DOCKERFILE}
                     """
                 }
             }
@@ -53,8 +54,10 @@ pipeline {
             steps {
                 script {
                     echo "Deploying Helm chart for frontend-service"
-                    def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                    sh "helm upgrade --install frontend-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+		    withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
+                    	def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
+                    	sh "helm upgrade --install frontend-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+		     } 
                 }
             }
         }

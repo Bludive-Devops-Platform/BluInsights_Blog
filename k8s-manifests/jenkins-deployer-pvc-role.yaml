@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pvc-manager
+  namespace: bluinsights
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "create", "delete", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pvc-manager-binding
+  namespace: bluinsights
+subjects:
+- kind: ServiceAccount
+  name: jenkins-deployer
+  namespace: bluinsights
+roleRef:
+  kind: Role
+  name: pvc-manager
+  apiGroup: rbac.authorization.k8s.io
+
