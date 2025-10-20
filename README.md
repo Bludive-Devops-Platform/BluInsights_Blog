@@ -13,7 +13,7 @@ The platform consists of the following components:
 
 The application demonstrates a real-world tech blogging platform with admin control, dynamic content updates, media uploads, and comment management.
 
-## 🏗 Architecture Overview..
+## 🏗 Architecture Overview...
 
 The system is composed of **microservices** that communicate via HTTP and JSON. Below is a high-level architecture diagram:
 
