@@ -151,7 +151,7 @@ npm install
 npm start
 ```
 
-#### Blog Service
+#### Blog Service.
 
 ```
 cd backend/blog-service
@@ -220,3 +220,4 @@ For questions or support regarding this project, contact **BluDive Technologies 
 ---
 
 *BluInsights - Bringing tech insights to life.*
+
