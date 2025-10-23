@@ -1,5 +1,6 @@
 # Use official Nginx image as base
-FROM nginx:1.27.1-alpine
+FROM nginx:1.29.2-alpine
+RUN apk upgrade --no-cache libxml2 libxslt expat
 
 # Set working directory in container
 WORKDIR /usr/share/nginx/html
