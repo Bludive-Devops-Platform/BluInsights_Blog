@@ -11,7 +11,7 @@ The platform consists of the following components:
 * **Blog Service**: Manages CRUD operations for blog posts.
 * **Comment Service**: Handles user comments on blog posts.
 
-The application demonstrates a real-world tech blogging platform with admin control, dynamic content updates, media uploads, and comment management.
+The application demonstrates a real-world tech blogging platform with admin control, dynamic content updates, media uploads, and comment management..
 
 ## 🏗 Architecture Overview
 
@@ -220,4 +220,5 @@ For questions or support regarding this project, contact **BluDive Technologies 
 ---
 
 *BluInsights - Bringing tech insights to life.*
+
 
