@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        // Path to your SOPS key and supporting info
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
         CHART_PATH = "${env.WORKSPACE}/helm-charts/blog-service"
         NAMESPACE = 'bluinsights'
@@ -13,10 +14,13 @@ pipeline {
             steps {
                 script {
                     echo "🔐 Decrypting environment variables..."
-                    // Decrypt the SOPS-encrypted .env file
-                    sh 'sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env'
+                    // Decrypt the SOPS-encrypted .env file correctly
+                    sh '''
+                        sops --decrypt --input-type dotenv --output-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
+                        echo "✅ Secrets decrypted to .env"
+                    '''
 
-                    // Load the decrypted .env file into Jenkins environment
+                    // Read the decrypted .env and load variables into Jenkins environment
                     def envFile = readFile('.env').split('\n')
                     for (line in envFile) {
                         if (line && line.contains('=')) {
@@ -24,7 +28,7 @@ pipeline {
                             env[key.trim()] = value.trim()
                         }
                     }
-                    echo "✅ Secrets decrypted and loaded into pipeline environment."
+                    echo "✅ Environment variables loaded into pipeline."
                 }
             }
         }
@@ -44,10 +48,10 @@ pipeline {
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
-                    echo "🧪 Scanning image ${IMAGE_TAG} with Snyk"
+                    echo "🧪 Running Snyk scan for ${IMAGE_TAG}"
                     sh """
                         snyk auth ${env.SNYK_TOKEN}
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE} || true
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --file=${DOCKERFILE} || true
                     """
                 }
             }
@@ -68,10 +72,13 @@ pipeline {
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "⚙️ Deploying Helm chart for blog-service"
+                    echo "⚙️ Deploying blog-service via Helm..."
                     sh """
                         export KUBECONFIG=${env.KUBECONFIG_FILE}
-                        helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} --set image.tag=${BUILD_NUMBER} --wait
+                        helm upgrade --install blog-service ${CHART_PATH} \
+                            -n ${NAMESPACE} \
+                            --set image.tag=${BUILD_NUMBER} \
+                            --wait
                     """
                 }
             }
@@ -80,9 +87,9 @@ pipeline {
 
     post {
         always {
-            echo "🧹 Cleaning up local Docker images and secrets"
+            echo "🧹 Cleaning up workspace..."
+            sh "rm -f .env || true"
             sh "docker rmi ${IMAGE_TAG} || true"
-            sh "shred -u .env || rm -f .env"
         }
         success {
             echo "✅ Pipeline completed successfully!"
