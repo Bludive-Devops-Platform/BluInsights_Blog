@@ -2,77 +2,84 @@ pipeline {
     agent any
 
     environment {
+        // Path to your SOPS key and supporting info
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
+        CHART_PATH = "${env.WORKSPACE}/helm-charts/comment-service"
+        NAMESPACE = 'bluinsights'
+        DOCKERFILE = './comment-service/Dockerfile'
     }
 
     stages {
-        // Stage to decrypt the secrets (devops.enc)
         stage('Decrypt Secrets') {
             steps {
                 script {
                     echo "🔐 Decrypting environment variables..."
-                    sh """
-                        sops --decrypt --input-type binary /var/lib/jenkins/secrets/devops.enc > .env
-                        export \$(cat .env | xargs)
-                        echo "✅ Secrets decrypted successfully."
-                    """
+                    // Decrypt the SOPS-encrypted .env file correctly
+                    sh '''
+                        sops --decrypt --input-type dotenv --output-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
+                        echo "✅ Secrets decrypted to .env"
+                    '''
+
+                    // Read the decrypted .env and load variables into Jenkins environment
+                    def envFile = readFile('.env').split('\n')
+                    for (line in envFile) {
+                        if (line && line.contains('=')) {
+                            def (key, value) = line.tokenize('=')
+                            env[key.trim()] = value.trim()
+                        }
+                    }
+                    echo "✅ Environment variables loaded into pipeline."
                 }
             }
         }
 
-        // Stage to build Docker image for comment-service
         stage('Build Docker Image') {
             steps {
                 script {
                     IMAGE_NAME = "bludivehub/bluinsights-comment-service"
                     IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
 
-                    echo "Building Docker image ${IMAGE_TAG} for comment-service"
-                    sh "docker build -t ${IMAGE_TAG} ./backend/comment-service"
+                    echo "🏗️ Building Docker image ${IMAGE_TAG}"
+                    sh "docker build -t ${IMAGE_TAG} ./comment-service"
                 }
             }
         }
 
-        // Stage to scan Docker image for vulnerabilities with Snyk
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
-                    echo "Scanning image ${IMAGE_TAG} with Snyk"
+                    echo "🧪 Running Snyk scan for ${IMAGE_TAG}"
                     sh """
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE} || true
+                        snyk auth ${env.SNYK_TOKEN}
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --file=${DOCKERFILE} || true
                     """
                 }
             }
         }
 
-        // Stage to push Docker image to DockerHub
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image ${IMAGE_TAG} to DockerHub"
-                    withCredentials([usernamePassword(
-                        credentialsId: 'Dockerhub-creds', 
-                        usernameVariable: 'DOCKER_USER', 
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                            docker push ${IMAGE_TAG}
-                        """
-                    }
+                    echo "🚀 Pushing Docker image ${IMAGE_TAG} to DockerHub"
+                    sh """
+                        echo "${env.DOCKER_PASSWORD}" | docker login -u "${env.DOCKER_USERNAME}" --password-stdin
+                        docker push ${IMAGE_TAG}
+                    """
                 }
             }
         }
 
-        // Stage to deploy via Helm (to Kubernetes)
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "Deploying Helm chart for comment-service"
-                    withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
-                        def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                        sh "helm upgrade --install comment-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
-                    }
+                    echo "⚙️ Deploying comment-service via Helm..."
+                    sh """
+                        export KUBECONFIG=${env.KUBECONFIG_FILE}
+                        helm upgrade --install comment-service ${CHART_PATH} \
+                            -n ${NAMESPACE} \
+                            --set image.tag=${BUILD_NUMBER} \
+                            --wait
+                    """
                 }
             }
         }
@@ -80,10 +87,15 @@ pipeline {
 
     post {
         always {
-            echo "Cleaning up local Docker images"
+            echo "🧹 Cleaning up workspace..."
+            sh "rm -f .env || true"
             sh "docker rmi ${IMAGE_TAG} || true"
         }
-        success { echo "Pipeline completed successfully!" }
-        failure { echo "Pipeline failed. Check logs." }
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs for details."
+        }
     }
 }
