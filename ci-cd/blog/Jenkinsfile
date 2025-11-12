@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     environment {
-        // Path to the SOPS decryption key for Age encryption
+        // Path to your Age key for SOPS decryption
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
+        CHART_PATH = "${env.WORKSPACE}/helm-charts/blog-service"
+        NAMESPACE = 'bluinsights'
+        DOCKERFILE = './backend/blog-service/Dockerfile'
     }
 
     stages {
-        // Stage 1: Decrypt secrets
         stage('Decrypt Secrets') {
             steps {
                 script {
@@ -25,7 +27,6 @@ pipeline {
             }
         }
 
-        // Stage 2: Build Docker image for blog-service
         stage('Build Docker Image') {
             steps {
                 script {
@@ -38,25 +39,24 @@ pipeline {
             }
         }
 
-        // Stage 3: Scan Docker image for vulnerabilities with Snyk
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
                     echo "🧪 Scanning image ${IMAGE_TAG} with Snyk"
                     sh """
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --file=./backend/blog-service/Dockerfile || true
+                        snyk auth $SNYK_TOKEN
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE} || true
                     """
                 }
             }
         }
 
-        // Stage 4: Push Docker image to DockerHub
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo "📤 Pushing Docker image ${IMAGE_TAG} to DockerHub"
+                    echo "🚀 Pushing Docker image ${IMAGE_TAG} to DockerHub"
                     sh '''
-                        source .env
+                        . .env
                         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
                         docker push ${IMAGE_TAG}
                     '''
@@ -64,18 +64,14 @@ pipeline {
             }
         }
 
-        // Stage 5: Deploy via Helm
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "🚀 Deploying Helm chart for blog-service"
+                    echo "⚙️ Deploying Helm chart for blog-service"
                     sh '''
-                        source .env
-                        helm upgrade --install blog-service ./helm-charts/blog-service \
-                            -n bluinsights \
-                            --set image.tag=${BUILD_NUMBER} \
-                            --kubeconfig="$KUBECONFIG_FILE" \
-                            --wait
+                        . .env
+                        export KUBECONFIG=$KUBECONFIG_FILE
+                        helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} --set image.tag=${BUILD_NUMBER} --wait
                     '''
                 }
             }
@@ -84,9 +80,15 @@ pipeline {
 
     post {
         always {
-            echo "🧹 Cleaning up local Docker images..."
+            echo "🧹 Cleaning up local Docker images"
             sh "docker rmi ${IMAGE_TAG} || true"
             sh "shred -u .env || rm -f .env"
         }
         success {
-            echo "✅ Pipeline compl
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check logs for errors."
+        }
+    }
+}
