@@ -36,11 +36,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def IMAGE_NAME = "bludivehub/bluinsights-comment-service"
-                    def IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
+                    IMAGE_NAME = "bludivehub/bluinsights-comment-service"
+                    IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
 
                     echo "🏗️ Building Docker image ${IMAGE_TAG}"
-                    sh "docker build -t ${IMAGE_TAG} ./comment-service"
+                    sh "docker build -t ${IMAGE_TAG} ./backend/comment-service"
                 }
             }
         }
