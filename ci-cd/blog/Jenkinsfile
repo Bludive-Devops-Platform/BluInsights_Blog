@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Path to your Age key for SOPS decryption
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
         CHART_PATH = "${env.WORKSPACE}/helm-charts/blog-service"
         NAMESPACE = 'bluinsights'
@@ -14,15 +13,18 @@ pipeline {
             steps {
                 script {
                     echo "🔐 Decrypting environment variables..."
-                    sh '''
-                        # Decrypt the SOPS-encrypted dotenv file
-                        sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
+                    // Decrypt the SOPS-encrypted .env file
+                    sh 'sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env'
 
-                        # Export variables for subsequent stages
-                        export $(grep -v '^#' .env | xargs -d '\\n')
-
-                        echo "✅ Secrets decrypted successfully."
-                    '''
+                    // Load the decrypted .env file into Jenkins environment
+                    def envFile = readFile('.env').split('\n')
+                    for (line in envFile) {
+                        if (line && line.contains('=')) {
+                            def (key, value) = line.tokenize('=')
+                            env[key.trim()] = value.trim()
+                        }
+                    }
+                    echo "✅ Secrets decrypted and loaded into pipeline environment."
                 }
             }
         }
@@ -44,7 +46,7 @@ pipeline {
                 script {
                     echo "🧪 Scanning image ${IMAGE_TAG} with Snyk"
                     sh """
-                        snyk auth $SNYK_TOKEN
+                        snyk auth ${env.SNYK_TOKEN}
                         snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE} || true
                     """
                 }
@@ -55,11 +57,10 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Pushing Docker image ${IMAGE_TAG} to DockerHub"
-                    sh '''
-                        . .env
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    sh """
+                        echo "${env.DOCKER_PASSWORD}" | docker login -u "${env.DOCKER_USERNAME}" --password-stdin
                         docker push ${IMAGE_TAG}
-                    '''
+                    """
                 }
             }
         }
@@ -68,11 +69,10 @@ pipeline {
             steps {
                 script {
                     echo "⚙️ Deploying Helm chart for blog-service"
-                    sh '''
-                        . .env
-                        export KUBECONFIG=$KUBECONFIG_FILE
+                    sh """
+                        export KUBECONFIG=${env.KUBECONFIG_FILE}
                         helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} --set image.tag=${BUILD_NUMBER} --wait
-                    '''
+                    """
                 }
             }
         }
@@ -80,7 +80,7 @@ pipeline {
 
     post {
         always {
-            echo "🧹 Cleaning up local Docker images"
+            echo "🧹 Cleaning up local Docker images and secrets"
             sh "docker rmi ${IMAGE_TAG} || true"
             sh "shred -u .env || rm -f .env"
         }
@@ -88,7 +88,7 @@ pipeline {
             echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs for errors."
+            echo "❌ Pipeline failed. Check logs for details."
         }
     }
 }
