@@ -2,79 +2,81 @@ pipeline {
     agent any
 
     environment {
+        // Path to the SOPS decryption key for Age encryption
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
     }
 
-    stage('Decrypt Secrets') {
-    steps {
-        script {
-            echo "🔐 Decrypting environment variables..."
-            sh '''
-                # Decrypt the SOPS-encrypted dotenv file
-                sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
+    stages {
+        // Stage 1: Decrypt secrets
+        stage('Decrypt Secrets') {
+            steps {
+                script {
+                    echo "🔐 Decrypting environment variables..."
+                    sh '''
+                        # Decrypt the SOPS-encrypted dotenv file
+                        sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
 
-                # Export variables for subsequent stages
-                export $(grep -v '^#' .env | xargs -d '\\n')
+                        # Export variables for subsequent stages
+                        export $(grep -v '^#' .env | xargs -d '\\n')
 
-                echo "✅ Secrets decrypted successfully."
-            '''
+                        echo "✅ Secrets decrypted successfully."
+                    '''
                 }
             }
         }
 
-        // Stage to build Docker image for blog-service
+        // Stage 2: Build Docker image for blog-service
         stage('Build Docker Image') {
             steps {
                 script {
                     IMAGE_NAME = "bludivehub/bluinsights-blog-service"
                     IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
 
-                    echo "Building Docker image ${IMAGE_TAG} for blog-service"
+                    echo "🏗️ Building Docker image ${IMAGE_TAG}"
                     sh "docker build -t ${IMAGE_TAG} ./backend/blog-service"
                 }
             }
         }
 
-        // Stage to scan Docker image for vulnerabilities with Snyk
+        // Stage 3: Scan Docker image for vulnerabilities with Snyk
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
-                    echo "Scanning image ${IMAGE_TAG} with Snyk"
+                    echo "🧪 Scanning image ${IMAGE_TAG} with Snyk"
                     sh """
-                        snyk container test ${IMAGE_TAG} --severity-threshold=high --docker ${IMAGE_NAME} --file=${DOCKERFILE} || true
+                        snyk container test ${IMAGE_TAG} --severity-threshold=high --file=./backend/blog-service/Dockerfile || true
                     """
                 }
             }
         }
 
-        // Stage to push Docker image to DockerHub
+        // Stage 4: Push Docker image to DockerHub
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image ${IMAGE_TAG} to DockerHub"
-                    withCredentials([usernamePassword(
-                        credentialsId: 'Dockerhub-creds', 
-                        usernameVariable: 'DOCKER_USER', 
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                            docker push ${IMAGE_TAG}
-                        """
-                    }
+                    echo "📤 Pushing Docker image ${IMAGE_TAG} to DockerHub"
+                    sh '''
+                        source .env
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push ${IMAGE_TAG}
+                    '''
                 }
             }
         }
 
-        // Stage to deploy via Helm (to Kubernetes)
+        // Stage 5: Deploy via Helm
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "Deploying Helm chart for blog-service"
-                    withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
-                        def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                        sh "helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
-                    }
+                    echo "🚀 Deploying Helm chart for blog-service"
+                    sh '''
+                        source .env
+                        helm upgrade --install blog-service ./helm-charts/blog-service \
+                            -n bluinsights \
+                            --set image.tag=${BUILD_NUMBER} \
+                            --kubeconfig="$KUBECONFIG_FILE" \
+                            --wait
+                    '''
                 }
             }
         }
@@ -82,10 +84,9 @@ pipeline {
 
     post {
         always {
-            echo "Cleaning up local Docker images"
+            echo "🧹 Cleaning up local Docker images..."
             sh "docker rmi ${IMAGE_TAG} || true"
+            sh "shred -u .env || rm -f .env"
         }
-        success { echo "Pipeline completed successfully!" }
-        failure { echo "Pipeline failed. Check logs." }
-    }
-}
+        success {
+            echo "✅ Pipeline compl
