@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Set the path to your SOPS decryption key for Age encryption
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
     }
 
@@ -21,15 +20,15 @@ pipeline {
             }
         }
 
-        // Stage to build Docker image for the service
+        // Stage to build Docker image for blog-service
         stage('Build Docker Image') {
             steps {
                 script {
-                    IMAGE_NAME = "bludivehub/bluinsights-${SERVICE_NAME}-service"
+                    IMAGE_NAME = "bludivehub/bluinsights-blog-service"
                     IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
 
-                    echo "Building Docker image ${IMAGE_TAG} for ${SERVICE_NAME}"
-                    sh "docker build -t ${IMAGE_TAG} ./backend/${SERVICE_NAME}"
+                    echo "Building Docker image ${IMAGE_TAG} for blog-service"
+                    sh "docker build -t ${IMAGE_TAG} ./backend/blog-service"
                 }
             }
         }
@@ -69,10 +68,10 @@ pipeline {
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "Deploying Helm chart for ${SERVICE_NAME}-service"
+                    echo "Deploying Helm chart for blog-service"
                     withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
                         def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                        sh "helm upgrade --install ${SERVICE_NAME}-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+                        sh "helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
                     }
                 }
             }
