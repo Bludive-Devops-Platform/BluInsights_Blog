@@ -7,17 +7,17 @@ pipeline {
             parallel {
                 stage('Blog Service') {
                     steps {
-                        build job: 'Blog-Service-CI', wait: true
+                        build job: 'blog-test', wait: true
                     }
                 }
                 stage('Comment Service') {
                     steps {
-                        build job: 'Comment-Service-CI', wait: true
+                        build job: 'comment-test', wait: true
                     }
                 }
                 stage('Frontend Service') {
                     steps {
-                        build job: 'Frontend-Service-CI', wait: true
+                        build job: 'frontend-test', wait: true
                     }
                 }
             }
