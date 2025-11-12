@@ -5,17 +5,19 @@ pipeline {
         SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
     }
 
-    stages {
-        // Stage to decrypt the secrets (devops.enc)
-        stage('Decrypt Secrets') {
-            steps {
-                script {
-                    echo "🔐 Decrypting environment variables..."
-                    sh """
-                        sops --decrypt --input-type binary /var/lib/jenkins/secrets/devops.enc > .env
-                        export \$(cat .env | xargs)
-                        echo "✅ Secrets decrypted successfully."
-                    """
+    stage('Decrypt Secrets') {
+    steps {
+        script {
+            echo "🔐 Decrypting environment variables..."
+            sh '''
+                # Decrypt the SOPS-encrypted dotenv file
+                sops --decrypt --input-type dotenv /var/lib/jenkins/secrets/devops.enc > .env
+
+                # Export variables for subsequent stages
+                export $(grep -v '^#' .env | xargs -d '\\n')
+
+                echo "✅ Secrets decrypted successfully."
+            '''
                 }
             }
         }
