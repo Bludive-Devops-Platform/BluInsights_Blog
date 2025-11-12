@@ -2,25 +2,39 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "bludivehub/bluinsights-blog-service"
-        IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-        REGISTRY_CREDENTIALS = 'Dockerhub-creds'
-        NAMESPACE = 'bluinsights'
-        CHART_PATH = "${env.WORKSPACE}/helm-charts/blog-service"
-        SNYK_TOKEN = credentials('snyk-api-token')
-        DOCKERFILE = './backend/blog-service/Dockerfile'
+        // Set the path to your SOPS decryption key for Age encryption
+        SOPS_AGE_KEY_FILE = '/var/lib/jenkins/.config/sops/age/keys.txt'
     }
 
     stages {
-        stage('Build Docker Image') {
+        // Stage to decrypt the secrets (devops.enc)
+        stage('Decrypt Secrets') {
             steps {
                 script {
-                    echo "Building Docker image ${IMAGE_TAG}"
-                    sh "docker build -t ${IMAGE_TAG} ./backend/blog-service"
+                    echo "🔐 Decrypting environment variables..."
+                    sh """
+                        sops --decrypt --input-type binary /var/lib/jenkins/secrets/devops.enc > .env
+                        export \$(cat .env | xargs)
+                        echo "✅ Secrets decrypted successfully."
+                    """
                 }
             }
         }
 
+        // Stage to build Docker image for the service
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    IMAGE_NAME = "bludivehub/bluinsights-${SERVICE_NAME}-service"
+                    IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
+
+                    echo "Building Docker image ${IMAGE_TAG} for ${SERVICE_NAME}"
+                    sh "docker build -t ${IMAGE_TAG} ./backend/${SERVICE_NAME}"
+                }
+            }
+        }
+
+        // Stage to scan Docker image for vulnerabilities with Snyk
         stage('Scan Docker Image for Vulnerabilities') {
             steps {
                 script {
@@ -32,17 +46,18 @@ pipeline {
             }
         }
 
+        // Stage to push Docker image to DockerHub
         stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image ${IMAGE_TAG}"
+                    echo "Pushing Docker image ${IMAGE_TAG} to DockerHub"
                     withCredentials([usernamePassword(
-                        credentialsId: REGISTRY_CREDENTIALS,
-                        usernameVariable: 'DOCKER_USER',
+                        credentialsId: 'Dockerhub-creds', 
+                        usernameVariable: 'DOCKER_USER', 
                         passwordVariable: 'DOCKER_PASS'
                     )]) {
                         sh """
-                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                             docker push ${IMAGE_TAG}
                         """
                     }
@@ -50,14 +65,14 @@ pipeline {
             }
         }
 
+        // Stage to deploy via Helm (to Kubernetes)
         stage('Deploy via Helm') {
             steps {
                 script {
-                    echo "Deploying Helm chart for blog-service"
-                    // Inject kubeconfig for cluster authentication
+                    echo "Deploying Helm chart for ${SERVICE_NAME}-service"
                     withCredentials([file(credentialsId: 'k8s-kubeconfig-file', variable: 'KUBECONFIG')]) {
                         def valuesArg = "--set image.tag=${env.BUILD_NUMBER}"
-                        sh "helm upgrade --install blog-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
+                        sh "helm upgrade --install ${SERVICE_NAME}-service ${CHART_PATH} -n ${NAMESPACE} ${valuesArg} --wait"
                     }
                 }
             }
@@ -73,4 +88,3 @@ pipeline {
         failure { echo "Pipeline failed. Check logs." }
     }
 }
- 
