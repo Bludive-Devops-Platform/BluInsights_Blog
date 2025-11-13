@@ -30,6 +30,14 @@ spec:
               mountPath: {{ .Values.persistence.images.mountPath }}
             - name: database
               mountPath: {{ .Values.persistence.database.mountPath }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:                                                                                                       
+              cpu: 300m                                                                                                   
+              memory: 256Mi
+                                    
       volumes:
         - name: images
           persistentVolumeClaim:

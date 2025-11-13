@@ -28,6 +28,14 @@ spec:
           volumeMounts:
             - name: sqlite-data
               mountPath: {{ .Values.persistence.mountPath }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:                                                                                                       
+              cpu: 300m                                                                                                   
+              memory: 256Mi
+                                                
       volumes:
         - name: sqlite-data
           persistentVolumeClaim:
